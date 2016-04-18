@@ -16,6 +16,7 @@
 #include <string>
 #include <thread>
 
+char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 
 int main(int argc, char* argv[])
@@ -24,6 +25,8 @@ int main(int argc, char* argv[])
   uint portnum = 4000;
   std::string file_dir = ".";
 
+
+  //==============PARSE COMMAND LINE ARGUMENTS================
 	//wrong number of arguments input
 	if(argc > 4)
 	{
@@ -46,8 +49,12 @@ int main(int argc, char* argv[])
   if(argc > 1)
   {
     hostname = std::string(argv[1]);
-    resolveIP(hostname);
   }
+
+  resolveIP(hostname); //resolves the IP passed in into the first IP address possibly calculated
+
+  // verify that the hostnames are checked properly
+  // std::cout << "hostname: " << hostname << " port num: " << portnum << " file_dir: " << file_dir << std::endl;
 
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -126,14 +133,28 @@ int main(int argc, char* argv[])
   return 0;
 }
 
+char* stringToCString(std::string s)
+{
+  const char* s_cstr = s.data(); //get a const char* version
+  char* s_cpy = (char *)malloc(sizeof(char) * (strlen(s_cstr)+1));
+  if(s_cpy == NULL)
+  {
+    std::cout << "Malloc Failed" << std::endl;
+    exit(1);
+  }
+
+  for(uint i = 0; i <= strlen(s_cstr); i++)
+  {
+    s_cpy[i] = s_cstr[i];
+  }
+
+  return s_cpy;
+
+}
 void resolveIP(std::string& hostname)
 {
-  const char* hostname_cstr = hostname.data(); //get a const char* version
-  char* hostname_cpy = (char *)malloc(sizeof(char) * (strlen(hostname_cstr)+1));
-  for(uint i = 0; i <= strlen(hostname_cstr); i++)
-  {
-    hostname_cpy[i] = hostname_cstr[i];
-  }
+  char* hostname_cstr = stringToCString(hostname);
+
 
   struct addrinfo hints;
   struct addrinfo* res;
@@ -145,7 +166,7 @@ void resolveIP(std::string& hostname)
 
   // get address
   int status = 0;
-  if ((status = getaddrinfo(hostname_cpy, "80", &hints, &res)) != 0) {
+  if ((status = getaddrinfo(hostname_cstr, "80", &hints, &res)) != 0) {
     std::cerr << "couldn't resolve IP address: " << gai_strerror(status) << std::endl;
     exit(1);
   }
@@ -159,4 +180,5 @@ void resolveIP(std::string& hostname)
   hostname = std::string(ipstr);
 
   freeaddrinfo(res); // free the linked list
+  free(hostname_cstr);
 }
