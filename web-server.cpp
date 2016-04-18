@@ -141,13 +141,13 @@ int main(int argc, char* argv[])
 
 char* stringToCString(std::string s)
 {
-  const char* s_cstr = s.data(); //get a const char* version
-  char* s_cpy = (char *)malloc(sizeof(char) * (strlen(s_cstr)+1));
-  if(s_cpy == NULL)
-  {
-    std::cout << "Malloc Failed" << std::endl;
-    exit(1);
-  }
+	const char* s_cstr = s.data(); //get a const char* version
+	char* s_cpy = (char *)malloc(sizeof(char) * (strlen(s_cstr) + 1));
+	if (s_cpy == NULL)
+	{
+		std::cout << "Malloc Failed" << std::endl;
+		exit(1);
+	}
 
   for(uint i = 0; i <= strlen(s_cstr); i++)
   {
