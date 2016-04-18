@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
 
   char* hostname_cstr = stringToCString(hostname);
   
+  //==============SOCKET CREATION FOR CONNECTIONS===================
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -74,8 +75,9 @@ int main(int argc, char* argv[])
   addr.sin_port = htons(portnum); 
   addr.sin_addr.s_addr = inet_addr(hostname_cstr);
   memset(addr.sin_zero, '\0', sizeof(addr.sin_zero));
-  exit(1);
+  free(hostname_cstr);
 
+  //bind the socket
   if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
     perror("bind");
     return 2;
@@ -97,6 +99,8 @@ int main(int argc, char* argv[])
     return 4;
   }
 
+  //HANDLING A NEW CONNECTION
+  //TODO: SPAWN THREADS FOR CODE FOLLOWING THIS LINE IN THE FUTURE, have main thread continue to accept connections
   char ipstr[INET_ADDRSTRLEN] = {'\0'};
   inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
   std::cout << "Accept a connection from: " << ipstr << ":" <<
@@ -132,7 +136,6 @@ int main(int argc, char* argv[])
 
   close(clientSockfd);
 
-  free(hostname_cstr);
   return 0;
 }
 
