@@ -4,6 +4,12 @@
 
 HttpRequest::HttpRequest()
 {
+	Scheme = "HTTP";
+	HTTPVersion = "1.0";
+}
+
+HttpRequest::HttpRequest(char* URI)
+{
 
 }
 
