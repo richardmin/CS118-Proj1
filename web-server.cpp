@@ -16,9 +16,11 @@
 #include <string>
 #include <thread>
 
+#include <vector>
+
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
-int handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd);
+void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd);
 
 int main(int argc, char* argv[])
 {
@@ -84,6 +86,8 @@ int main(int argc, char* argv[])
     return 2;
   }
 
+  //FIX: exits all connections when one connection closes
+  std::vector<std::thread> thread_vec;
   while (1) {
 	  // set socket to listen status
 	  if (listen(sockfd, 1) == -1) {
@@ -102,14 +106,16 @@ int main(int argc, char* argv[])
 	  }
 
 	  std::thread t(handle_one_connection, clientAddr, clientSockfd);
-
+	  thread_vec.push_back(move(t));
   }
 
-  
+ // int n_threads = thread_vec.size();
+ // for (int i = 0; i < n_threads; i++)
+//	  thread_vec[i].join();
   return 0;
 }
 
-int handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
+void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	//HANDLING A NEW CONNECTION
 	//TODO: SPAWN THREADS FOR CODE FOLLOWING THIS LINE IN THE FUTURE, have main thread continue to accept connections
 	char ipstr[INET_ADDRSTRLEN] = { '\0' };
