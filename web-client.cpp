@@ -15,6 +15,11 @@
 #include <string>
 #include <thread>
 
+// boost libraries to parse the URI passed as an argument
+#include <boost/network/uri.hpp>
+#include <boost/network/uri/uri_io.hpp>
+
+#include 
 int main(int argc, char* argv[])
 {
   //==================READ ARGUMENTS================
@@ -23,7 +28,16 @@ int main(int argc, char* argv[])
     std::cout << "Usage: " << argv[0] << " <URL>" << std::endl;
     exit(1);
   }
-  
+
+
+  boost::network::uri::uri instance(argv[1]);
+  assert(instance.is_valid());
+  std::cout << "scheme: " << instance.scheme() << std::endl
+            << "port: " << instance.port() << std::endl
+            << "host: " << instance.host() << std::endl;
+
+  exit(1);
+
 
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
