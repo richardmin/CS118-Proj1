@@ -15,7 +15,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
-
+#include <signal.h>
 #include <vector>
 
 char* stringToCString(std::string s);
@@ -61,6 +61,7 @@ int main(int argc, char* argv[])
 
   char* hostname_cstr = stringToCString(hostname);
   
+  signal(SIGPIPE, SIG_IGN); //we don't want SIGPIPEs, because we'll handle that manually ourselves in the threads. If the pipe closes, we simply close the socket.
   //==============SOCKET CREATION FOR CONNECTIONS===================
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -132,8 +133,9 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		memset(buf, '\0', sizeof(buf));
 
 		if (recv(clientSockfd, buf, 20, 0) == -1) {
-			perror("recv");
-			exit(5);
+			// perror("recv");
+			// exit(5);
+      break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
 		}
 
 		ss << buf << std::endl;
@@ -141,8 +143,9 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
 
 		if (send(clientSockfd, buf, 20, 0) == -1) {
-			perror("send");
-			exit(6);
+			// perror("send");
+			// exit(6);
+      break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
 		}
 
 		if (ss.str() == "close\n")
