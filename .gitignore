@@ -26,3 +26,11 @@
 *.exe
 *.out
 *.app
+*.dSYM
+
+# Vagrant
+.vagrant
+
+# Executables
+web-server
+web-client
