@@ -18,6 +18,7 @@
 
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
+int handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd);
 
 int main(int argc, char* argv[])
 {
@@ -83,71 +84,79 @@ int main(int argc, char* argv[])
     return 2;
   }
 
-  // set socket to listen status
-  if (listen(sockfd, 1) == -1) {
-    perror("listen");
-    return 3;
+  while (1) {
+	  // set socket to listen status
+	  if (listen(sockfd, 1) == -1) {
+		perror("listen");
+		return 3;
+	  }
+
+	  // accept a new connection
+	  struct sockaddr_in clientAddr;
+	  socklen_t clientAddrSize = sizeof(clientAddr);
+	  int clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize);
+
+	  if (clientSockfd == -1) {
+		  perror("accept");
+		  return 4;
+	  }
+
+	  std::thread t(handle_one_connection, clientAddr, clientSockfd);
+
   }
 
-  // accept a new connection
-  struct sockaddr_in clientAddr;
-  socklen_t clientAddrSize = sizeof(clientAddr);
-  int clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize);
-
-  if (clientSockfd == -1) {
-    perror("accept");
-    return 4;
-  }
-
-  //HANDLING A NEW CONNECTION
-  //TODO: SPAWN THREADS FOR CODE FOLLOWING THIS LINE IN THE FUTURE, have main thread continue to accept connections
-  char ipstr[INET_ADDRSTRLEN] = {'\0'};
-  inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
-  std::cout << "Accept a connection from: " << ipstr << ":" <<
-    ntohs(clientAddr.sin_port) << std::endl;
-
-  // read/write data from/into the connection
-  bool isEnd = false;
-  char buf[20] = {0};
-  std::stringstream ss;
-
-  while (!isEnd) {
-    memset(buf, '\0', sizeof(buf));
-
-    if (recv(clientSockfd, buf, 20, 0) == -1) {
-      perror("recv");
-      return 5;
-    }
-
-    ss << buf << std::endl;
-    std::cout << buf << std::endl;
-
-
-    if (send(clientSockfd, buf, 20, 0) == -1) {
-      perror("send");
-      return 6;
-    }
-
-    if (ss.str() == "close\n")
-      break;
-
-    ss.str("");
-  }
-
-  close(clientSockfd);
-
+  
   return 0;
+}
+
+int handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
+	//HANDLING A NEW CONNECTION
+	//TODO: SPAWN THREADS FOR CODE FOLLOWING THIS LINE IN THE FUTURE, have main thread continue to accept connections
+	char ipstr[INET_ADDRSTRLEN] = { '\0' };
+	inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
+	std::cout << "Accept a connection from: " << ipstr << ":" <<
+		ntohs(clientAddr.sin_port) << std::endl;
+
+	// read/write data from/into the connection
+	bool isEnd = false;
+	char buf[20] = { 0 };
+	std::stringstream ss;
+
+	while (!isEnd) {
+		memset(buf, '\0', sizeof(buf));
+
+		if (recv(clientSockfd, buf, 20, 0) == -1) {
+			perror("recv");
+			exit(5);
+		}
+
+		ss << buf << std::endl;
+		std::cout << buf << std::endl;
+
+
+		if (send(clientSockfd, buf, 20, 0) == -1) {
+			perror("send");
+			exit(6);
+		}
+
+		if (ss.str() == "close\n")
+			break;
+
+		ss.str("");
+	}
+
+	close(clientSockfd);
 }
 
 char* stringToCString(std::string s)
 {
-  const char* s_cstr = s.data(); //get a const char* version
-  char* s_cpy = (char *)malloc(sizeof(char) * (strlen(s_cstr)+1));
-  if(s_cpy == NULL)
-  {
-    std::cout << "Malloc Failed" << std::endl;
-    exit(1);
-  }
+	const char* s_cstr = s.data(); //get a const char* version
+	char* s_cpy = (char *)malloc(sizeof(char) * (strlen(s_cstr) + 1));
+	if (s_cpy == NULL)
+	{
+		std::cout << "Malloc Failed" << std::endl;
+		exit(1);
+	}
 
   for(uint i = 0; i <= strlen(s_cstr); i++)
   {
