@@ -19,4 +19,4 @@ clean:
 	rm -rf *.o *~ *.gch *.swp *.dSYM web-server web-client a.out *.tar.gz
 
 tarball: clean
-	tar -cvf $(USERID).tar.gz *.cpp *.h a.out Makefile 
+	tar -cvf $(USERID).tar.gz *.cpp *.h Makefile README.txt
