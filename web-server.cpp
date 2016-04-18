@@ -46,10 +46,8 @@ int main(int argc, char* argv[])
   if(argc > 1)
   {
     hostname = std::string(argv[1]);
+    resolveIP(hostname);
   }
-
-
-	
 
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -67,6 +65,7 @@ int main(int argc, char* argv[])
   addr.sin_port = htons(portnum); 
   addr.sin_addr.s_addr = inet_addr(argv[1]);
   memset(addr.sin_zero, '\0', sizeof(addr.sin_zero));
+  exit(1);
 
   if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
     perror("bind");
@@ -131,7 +130,7 @@ void resolveIP(std::string& hostname)
 {
   const char* hostname_cstr = hostname.data(); //get a const char* version
   char* hostname_cpy = (char *)malloc(sizeof(char) * (strlen(hostname_cstr)+1));
-  for(int i = 0; i <= strlen(hostname_cstr); i++)
+  for(uint i = 0; i <= strlen(hostname_cstr); i++)
   {
     hostname_cpy[i] = hostname_cstr[i];
   }
