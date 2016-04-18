@@ -17,6 +17,14 @@
 
 int main(int argc, char* argv[])
 {
+  //==================READ ARGUMENTS================
+  if(argc != 2)
+  {
+    std::cout << "Usage: " << argv[0] << " <URL>" << std::endl;
+    exit(1);
+  }
+  
+
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
