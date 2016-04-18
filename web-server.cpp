@@ -56,6 +56,8 @@ int main(int argc, char* argv[])
   // verify that the hostnames are checked properly
   // std::cout << "hostname: " << hostname << " port num: " << portnum << " file_dir: " << file_dir << std::endl;
 
+  char* hostname_cstr = stringToCString(hostname);
+  
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -70,7 +72,7 @@ int main(int argc, char* argv[])
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
   addr.sin_port = htons(portnum); 
-  addr.sin_addr.s_addr = inet_addr(argv[1]);
+  addr.sin_addr.s_addr = inet_addr(hostname_cstr);
   memset(addr.sin_zero, '\0', sizeof(addr.sin_zero));
   exit(1);
 
@@ -130,6 +132,7 @@ int main(int argc, char* argv[])
 
   close(clientSockfd);
 
+  free(hostname_cstr);
   return 0;
 }
 
