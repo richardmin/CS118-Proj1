@@ -15,9 +15,9 @@
 #include <sstream>
 #include <string>
 #include <thread>
-
-
-#include <boost/network/uri.hpp>
+#include <algorithm>
+#include <cctype>
+#include <functional>
 
 
 char* stringToCString(std::string s);
@@ -36,22 +36,30 @@ int main(int argc, char* argv[])
   }
 
   std::string unparsedURL = std::string(argv[1]);
-  std::cout << unparsedURL << std::endl;
+  // std::cout << unparsedURL << std::endl;
 
-  int schemaEnd = unparsedURL.find("://");
-  if(schemaEnd == -1)
-  {
-    std::cout << "You must specify a schema" << std::endl;
-    exit(1);
-  }
-  std::string schema = unparsedURL.substr(0, schemaEnd);
-  if(schema != "http://")
-  {
-    std::cout << "You must use precisely \"http://\" schema." << std::endl;
-    exit(1);
-  }
+  // int schemaEnd = unparsedURL.find("://");
+  // if(schemaEnd == -1)
+  // {
+  //   std::cout << "You must specify a schema" << std::endl;
+  //   exit(1);
+  // }
+  // std::string schema = unparsedURL.substr(0, schemaEnd);
+  // std::cout << "schema: " << schema << std::endl;
+  // if(schema != "http://")
+  // {
+  //   std::cout << "You must use precisely \"http://\" schema." << std::endl;
+  //   exit(1);
+  // }
 
-  int 
+  // int URIEnd = unparsedURL.find(":", schemaEnd+1);
+  // if(URIEnd == -1 || unparsedURL.find("/", schemaEnd+1) < URIEnd) //the colon isn't there; port number is unspecified
+  //   URIEnd = unparsedURL.find("/", schemaEnd+1);
+  // else //otherwise there's a port number specified
+  // {
+
+  // }
+
 
 
   exit(1);
@@ -143,6 +151,7 @@ char* stringToCString(std::string s)
   return s_cpy;
 
 }
+
 void resolveIP(std::string& hostname)
 {
   char* hostname_cstr = stringToCString(hostname);
@@ -174,3 +183,4 @@ void resolveIP(std::string& hostname)
   freeaddrinfo(res); // free the linked list
   free(hostname_cstr);
 }
+

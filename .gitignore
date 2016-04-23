@@ -37,3 +37,7 @@ web-client
 
 # Mac Files
 .DS_Store
+
+
+# CPP-netlib
+cpp-netlib-0.9.4
