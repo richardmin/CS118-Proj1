@@ -34,3 +34,6 @@
 # Executables
 web-server
 web-client
+
+# Mac Files
+.DS_Store
