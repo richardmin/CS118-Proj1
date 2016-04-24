@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-
+#include <stdint.h>
 class HttpRequest
 {
 public:

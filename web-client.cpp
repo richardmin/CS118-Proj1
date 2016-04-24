@@ -14,27 +14,38 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <thread>
-#include <algorithm>
-#include <cctype>
-#include <functional>
+#include <regex>
 
+// #include <boost/regex.hpp>
 
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 
+
+
 int main(int argc, char* argv[])
 {
   int portnum = 80;
-  char* domain;
+  // char* domain;
 
   //==================READ ARGUMENTS================
-  if(argc != 2)
-  {
-    std::cout << "Usage: " << argv[0] << " <URL>" << std::endl;
-    exit(1);
-  }
+  // if(argc != 2)
+  // {
+  //   std::cout << "Usage: " << argv[0] << " <URL>" << std::endl;
+  //   exit(1);
+  // }
 
+  
+   std::string seq = "foo@helloworld.com";
+std::regex rgx("(.*)@(.*)");
+std::smatch result;
+regex_search(seq, result, rgx);
+for(size_t i=0; i<result.size(); ++i)
+{
+    std::cout << result[i] << std::endl;
+}
+
+  exit(1);
   std::string unparsedURL = std::string(argv[1]);
   // std::cout << unparsedURL << std::endl;
 

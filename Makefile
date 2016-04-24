@@ -1,7 +1,7 @@
-CXX=g++
+CXX=g++-4.9
 CXXOPTIMIZE= -O2
-BOOST=-L/vagrant/cpp-netlib-0.9.4/libs/network/src 
-CXXFLAGS= -g -Wall -pthread -std=c++11 $(CXXOPTIMIZE) $(BOOST) -lcppnetlib-uri -lcppnetlib-server-parsers -lcppnetlib-client-connections
+BOOST=-lboost_regex
+CXXFLAGS= $(BOOST) -g $(CXXOPTIMIZE) -Wall -pthread -std=c++11 
 USERID=EDIT_MAKE_FILE
 CLASSES=HttpRequest.o HttpResponse.o
 
