@@ -1,7 +1,8 @@
-CXX=g++-4.9
+CXX=g++
 CXXOPTIMIZE= -O2
 BOOST=-lboost_regex
-CXXFLAGS= $(BOOST) -g $(CXXOPTIMIZE) -Wall -pthread -std=c++11 
+CXXFLAGS= -g $(CXXOPTIMIZE) -Wall -std=c++11 
+LIBRARIES=$(BOOST)
 USERID=EDIT_MAKE_FILE
 CLASSES=HttpRequest.o HttpResponse.o
 
@@ -12,10 +13,10 @@ all: web-server web-client
 	$(CXX) $(CXXFLAGS) -c %.cpp 
 
 web-server: $(CLASSES)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp
+	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
 
 web-client: $(CLASSES)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp
+	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
 
 .PHONY: clean
 clean:

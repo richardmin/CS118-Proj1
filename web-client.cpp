@@ -16,7 +16,7 @@
 #include <string>
 #include <regex>
 
-// #include <boost/regex.hpp>
+#include <boost/regex.hpp>
 
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
@@ -35,15 +35,11 @@ int main(int argc, char* argv[])
   //   exit(1);
   // }
 
-  
-   std::string seq = "foo@helloworld.com";
-std::regex rgx("(.*)@(.*)");
-std::smatch result;
-regex_search(seq, result, rgx);
-for(size_t i=0; i<result.size(); ++i)
-{
-    std::cout << result[i] << std::endl;
-}
+  // http://tools.ietf.org/html/rfc3986#appendix-B
+   
+  boost::regex url_decompose_regex(
+    "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?$",
+    boost::regbase::normal);
 
   exit(1);
   std::string unparsedURL = std::string(argv[1]);
