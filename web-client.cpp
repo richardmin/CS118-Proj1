@@ -21,7 +21,6 @@
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 
-using namespace std;
 
 int main(int argc, char* argv[])
 {
@@ -29,32 +28,29 @@ int main(int argc, char* argv[])
   // char* domain;
 
   //==================READ ARGUMENTS================
-  // if(argc != 2)
-  // {
-  //   std::cout << "Usage: " << argv[0] << " <URL>" << std::endl;
-  //   exit(1);
-  // }
+  if(argc != 2)
+  {
+    std::cout << "Usage: " << argv[0] << " <URL>" << std::endl;
+    exit(1);
+  }
 
-  // http://tools.ietf.org/html/rfc3986#appendix-B
-   
-  // boost::regex url_decompose_regex(
-  //   "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?$",
-  //   boost::regbase::normal);
-string url="https://www.google.com:443/webhp?gws_rd=ssl#q=cpp";
-    boost::regex ex("(http|https)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
-    boost::cmatch what;
-    if(regex_match(url.c_str(), what, ex)) 
-    {
-        cout << "protocol: " << string(what[1].first, what[1].second) << endl;
-        cout << "domain:   " << string(what[2].first, what[2].second) << endl;
-        cout << "port:     " << string(what[3].first, what[3].second) << endl;
-        cout << "path:     " << string(what[4].first, what[4].second) << endl;
-        cout << "query:    " << string(what[5].first, what[5].second) << endl;
-        cout << "fragment: " << string(what[6].first, what[6].second) << endl;
-    }
-    return 0;
-  exit(1);
-  std::string unparsedURL = std::string(argv[1]);
+  // Regex from http://tools.ietf.org/html/rfc3986#appendix-B
+  std::string url = std::string(argv[1]);
+  boost::regex ex("(http|https)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
+  boost::cmatch url_matches;
+
+  if(regex_match(url.c_str(), url_matches, ex)) 
+  {
+      std::cout << "protocol: " << std::string(url_matches[1].first, url_matches[1].second) << std::endl;
+      std::cout << "domain:   " << std::string(url_matches[2].first, url_matches[2].second) << std::endl;
+      std::cout << "port:     " << std::string(url_matches[3].first, url_matches[3].second) << std::endl;
+      std::cout << "path:     " << std::string(url_matches[4].first, url_matches[4].second) << std::endl;
+      std::cout << "query:    " << std::string(url_matches[5].first, url_matches[5].second) << std::endl;
+      std::cout << "fragment: " << std::string(url_matches[6].first, url_matches[6].second) << std::endl;
+  }
+  return 0;
+  
+  
   // std::cout << unparsedURL << std::endl;
 
   // int schemaEnd = unparsedURL.find("://");
