@@ -21,7 +21,7 @@
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 
-
+using namespace std;
 
 int main(int argc, char* argv[])
 {
@@ -37,10 +37,22 @@ int main(int argc, char* argv[])
 
   // http://tools.ietf.org/html/rfc3986#appendix-B
    
-  boost::regex url_decompose_regex(
-    "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?$",
-    boost::regbase::normal);
-
+  // boost::regex url_decompose_regex(
+  //   "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?$",
+  //   boost::regbase::normal);
+string url="https://www.google.com:443/webhp?gws_rd=ssl#q=cpp";
+    boost::regex ex("(http|https)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
+    boost::cmatch what;
+    if(regex_match(url.c_str(), what, ex)) 
+    {
+        cout << "protocol: " << string(what[1].first, what[1].second) << endl;
+        cout << "domain:   " << string(what[2].first, what[2].second) << endl;
+        cout << "port:     " << string(what[3].first, what[3].second) << endl;
+        cout << "path:     " << string(what[4].first, what[4].second) << endl;
+        cout << "query:    " << string(what[5].first, what[5].second) << endl;
+        cout << "fragment: " << string(what[6].first, what[6].second) << endl;
+    }
+    return 0;
   exit(1);
   std::string unparsedURL = std::string(argv[1]);
   // std::cout << unparsedURL << std::endl;
