@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
     requestString.append(path);
   else
     requestString.append("/");
-  
+
   if(query.length() != 0)
   {
     requestString.append("?q=");
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
     requestString.append(fragment);
   }
 
-  requestString.append(" HTTP/1.0");  
+  requestString.append(" HTTP/1.0\r\n\r\n");  
   std::cout << requestString << std::endl;
   exit(5);
   //------CONNECT TO THE SERVER --------------//
