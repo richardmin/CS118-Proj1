@@ -135,7 +135,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	while (!isEnd) {
 		memset(buf, '\0', sizeof(buf));
 
-		if (size_recv = recv(clientSockfd, buf, 20, 0) == -1) {
+		if ((size_recv = recv(clientSockfd, buf, 20, 0)) == -1) {
 			// perror("recv");
 			// exit(5);
       break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
@@ -144,19 +144,23 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		ss << buf << std::endl;
 		std::cout << buf << std::endl;
 
+		
+		if (send(clientSockfd, buf, 20, 0) == -1) {
+			// perror("send");
+			// exit(6);
+			break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
+
+		if (ss.str() == "close\n")
+			break;
+
+		ss.str("");
 	}
 
-	if (send(clientSockfd, ss.str(), total_size, 0) == -1)
-		//		if (send(clientSockfd, buf, 20, 0) == -1) {
-		// perror("send");
-		// exit(6);
-		break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
-	}
+	
 
-	if (ss.str() == "close\n")
-		break;
 
-//	ss.str("");
+}
+
 
 	close(clientSockfd);
 }
