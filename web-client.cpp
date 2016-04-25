@@ -25,7 +25,7 @@ void resolveIP(std::string& hostname); //note this only gets the first IP
 int main(int argc, char* argv[])
 {
   int portnum = 80;
-  // char* domain;
+  std::string protocol, domain, port, path, query, fragment;
 
   //==================READ ARGUMENTS================
   if(argc != 2)
@@ -33,10 +33,11 @@ int main(int argc, char* argv[])
     std::cout << "Usage: " << argv[0] << " <URL>" << std::endl;
     exit(1);
   }
-
-  // Regex from http://tools.ietf.org/html/rfc3986#appendix-B
+  
   std::string url = std::string(argv[1]);
-  boost::regex ex("(http|https)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
+  // Regex from http://stackoverflow.com/a/27372789
+  
+  boost::regex ex("([^:/?#]+)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
   boost::cmatch url_matches;
 
   if(regex_match(url.c_str(), url_matches, ex)) 
@@ -48,6 +49,17 @@ int main(int argc, char* argv[])
       std::cout << "query:    " << std::string(url_matches[5].first, url_matches[5].second) << std::endl;
       std::cout << "fragment: " << std::string(url_matches[6].first, url_matches[6].second) << std::endl;
   }
+  else
+  {
+    std::cout << "Invalid URL! Please carefully check your spelling. Note that a schema must be provided." << std::endl;
+    exit(1);
+  }
+
+  if(!protocol.compare(""))
+  {
+    
+  }
+
   return 0;
   
   
