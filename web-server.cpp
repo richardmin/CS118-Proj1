@@ -18,9 +18,14 @@
 #include <signal.h>
 #include <vector>
 
+#include <boost/tokenizer.hpp>
+
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd);
+std::vector<std::string> split_by_carriage_return(std::string input);
+//std::vector<std::string> split_by_double_carriage_return(std::string input);
+int statusCode = 200;
 
 int main(int argc, char* argv[])
 {
@@ -131,6 +136,8 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	int total_size = 0;
 	int size_recv;
 	std::stringstream ss;
+	std::string RequestString;
+	std::string ReplyString;
 
 	while (!isEnd) {
 		memset(buf, '\0', sizeof(buf));
@@ -140,7 +147,12 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			// exit(5);
       break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
 		}
+
 		total_size += size_recv;
+		//TODO: Is it on off-by-one error? should it be size_recv or size_recv -1? ???????
+		//std::string substring = buf.substr(0, size_recv - 1);
+		RequestString.append(buf);
+
 		ss << buf << std::endl;
 		std::cout << buf << std::endl;
 
@@ -154,13 +166,61 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			break;
 
 		ss.str("");
+		}
+
 	}
 
-	
+	//Trying to do some parsing.. :/
+/*	std::cout << RequestString << std::endl;
+	std::vector wholeRequest =  split_by_double_carriage_return(RequestString);
+	std::string method, path, protocol;
+	char_separator<char> sep(' ');
+	tokenizer<char_separator<char>> tokens(wholeRequest[0], sep);
+	tokenizer<char_separator<char>>::iterator it = tokens.begin();
+	while (1) {
+		//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
+		if (*it != "GET") {
+			statusCode = 400;
+			std::cerr << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
+			break;
+		}
+		method = *it;
+		++it;
 
+		if (*it[0] != '/') {
+			statusCode = 400;
+			std::cerr << "Invalid path name given: " << *it << std::end;
+			break;
+		}
+		path = *it;
+		++it;
 
-}
-
+		if (*it != "HTTP/1.0") {
+			statusCode = 400;
+			std::cerr << "Sorry, non-http isn't currently supported. You specified: " << *it << std::endl;
+			break;
+		}
+		protocol = *it;
+		break;
+	}
+*/
+	//TODO: Implement these 2 variables!!!!!????????????!?!?!
+	std::string method;
+	int contentLength;
+	ReplyString.append(method);
+	ReplyString += '0' + statusCode;
+	if (statusCode == 200)
+		ReplyString.append("OK");
+	else if (statusCode == 400)
+		ReplyString.append("Bad request");
+	else if (statusCode == 404)
+		ReplyString.append("Not found");
+	else
+		std::cout << "Bad status code.. how did you get here.." << std::endl;
+	ReplyString.append("\r\n\");
+	ReplyString.append("Content-Length: ");
+	ReplyString += '0' + contentLength;
+	ReplyString.append("\r\n\r\n");
 
 	close(clientSockfd);
 }
@@ -214,3 +274,59 @@ void resolveIP(std::string& hostname)
   freeaddrinfo(res); // free the linked list
   free(hostname_cstr);
 }
+
+
+std::vector<std::string> split_by_carriage_return(std::string input) {
+	std::vector<std::string> str_vector;
+	std::size_t index, n_lines = 0;
+	std::string line;
+	while (1) {
+		index = input.find("\r\n");
+		//There were NO \r\n's at all
+		if (n_lines == 0 && index == input.size()) {
+			statusCode = 400;
+			std::cerr << "Bad request: don't forget to change this code so that you actually set the code variable" << std::endl;
+			break;
+		}
+		//There are no more \r\n's
+		if (index == input.size())
+			break;
+
+		line = input.substr(0, index);
+		//If we have consecutive carriage returns, we reached the end of one header section
+		if (line.size() <= 0) {
+			break;
+		}
+		str_vector.push_back(line);
+		n_lines++;
+		input = input.substr(index + 2);
+	}
+	return str_vector;
+}
+
+/*
+std::vector<std::string> split_by_double_carriage_return(std::string input) {
+	std::vector<std::string> str_vector;
+	std::size_t index, n_lines = 0;
+	std::string line;
+	while (1) {
+		index = input.find("\r\n\r\n");
+		//There were NO \r\n\r\n's AT ALL
+		if (n_lines == 0 && index == input.size()) {
+			statusCode = 400;
+			std::cerr << "Bad request: don't forget to change this code so that you actually set the code variable" << std::endl;
+			break;
+		}
+		//There were no more \r\n\r\n's
+		else if (index == input.size())
+			break;
+
+		line = input.substr(0, index);
+		str_vector.push_back(line);
+		n_lines++;
+		input = input.substr(index + 4);
+	}
+	return str_vector;
+
+}
+*/
