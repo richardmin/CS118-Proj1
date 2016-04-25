@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     exit(1);
   }
 
-  if(port.compare("")) //port specified
+  if(port.length() != 0) //port specified
   {
     std::stringstream convert(port);
     if(!(convert >> portnum))
@@ -76,12 +76,23 @@ int main(int argc, char* argv[])
 
   //----------FORMAT REQUEST STRING ------------------//
   requestString = std::string("GET ");
-  requestString.append(path);
-  requestString.append("?q=");
-  requestString.append(query);
-  requestString.append("#");
-  requestString.append(fragment);
-  requestString.append(" HTTP/1.0");
+  if(path.length() != 0)
+    requestString.append(path);
+  else
+    requestString.append("/");
+  
+  if(query.length() != 0)
+  {
+    requestString.append("?q=");
+    requestString.append(query);
+  }
+  if(fragment.length() != 0)
+  {
+    requestString.append("#");
+    requestString.append(fragment);
+  }
+
+  requestString.append(" HTTP/1.0");  
   std::cout << requestString << std::endl;
   exit(5);
   //------CONNECT TO THE SERVER --------------//
