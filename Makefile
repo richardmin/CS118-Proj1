@@ -1,7 +1,7 @@
 CXX=g++
 CXXOPTIMIZE= -O2
 BOOST=-lboost_regex
-CXXFLAGS= -g $(CXXOPTIMIZE) -Wall -std=c++11 
+CXXFLAGS= -g $(CXXOPTIMIZE) -pthread -Wall -std=c++11 
 LIBRARIES=$(BOOST)
 USERID=EDIT_MAKE_FILE
 CLASSES=HttpRequest.o HttpResponse.o
