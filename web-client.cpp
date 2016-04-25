@@ -25,7 +25,7 @@ void resolveIP(std::string& hostname); //note this only gets the first IP
 int main(int argc, char* argv[])
 {
   int portnum = 80;
-  std::string protocol, domain, port, path, query, fragment;
+  std::string protocol, domain, port, path, query, fragment, requestString;
 
   //==================READ ARGUMENTS================
   if(argc != 2)
@@ -35,19 +35,18 @@ int main(int argc, char* argv[])
   }
   
   std::string url = std::string(argv[1]);
-  // Regex from http://stackoverflow.com/a/27372789
-  
+  // Regex from http://stackoverflow.com/a/27372789 and http://tools.ietf.org/html/rfc3986#appendix-B
   boost::regex ex("([^:/?#]+)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
   boost::cmatch url_matches;
 
   if(regex_match(url.c_str(), url_matches, ex)) 
   {
-      std::cout << "protocol: " << std::string(url_matches[1].first, url_matches[1].second) << std::endl;
-      std::cout << "domain:   " << std::string(url_matches[2].first, url_matches[2].second) << std::endl;
-      std::cout << "port:     " << std::string(url_matches[3].first, url_matches[3].second) << std::endl;
-      std::cout << "path:     " << std::string(url_matches[4].first, url_matches[4].second) << std::endl;
-      std::cout << "query:    " << std::string(url_matches[5].first, url_matches[5].second) << std::endl;
-      std::cout << "fragment: " << std::string(url_matches[6].first, url_matches[6].second) << std::endl;
+      protocol = std::string(url_matches[1].first, url_matches[1].second);
+      domain = std::string(url_matches[2].first, url_matches[2].second);
+      port = std::string(url_matches[3].first, url_matches[3].second);
+      path = std::string(url_matches[4].first, url_matches[4].second);
+      query = std::string(url_matches[5].first, url_matches[5].second);
+      fragment = std::string(url_matches[6].first, url_matches[6].second);
   }
   else
   {
@@ -55,55 +54,46 @@ int main(int argc, char* argv[])
     exit(1);
   }
 
-  if(!protocol.compare(""))
+
+  if(protocol.compare("http"))
   {
-    
+    std::cout << "Sorry, non-http isn't currently supported. You specified: " << protocol << std::endl;
+    exit(1);
   }
 
-  return 0;
-  
-  
-  // std::cout << unparsedURL << std::endl;
+  if(port.compare("")) //port specified
+  {
+    std::stringstream convert(port);
+    if(!(convert >> portnum))
+    {
+      std::cout << "<port> must be a integer!" << std::endl;
+      exit(1);
+    }
+  }
 
-  // int schemaEnd = unparsedURL.find("://");
-  // if(schemaEnd == -1)
-  // {
-  //   std::cout << "You must specify a schema" << std::endl;
-  //   exit(1);
-  // }
-  // std::string schema = unparsedURL.substr(0, schemaEnd);
-  // std::cout << "schema: " << schema << std::endl;
-  // if(schema != "http://")
-  // {
-  //   std::cout << "You must use precisely \"http://\" schema." << std::endl;
-  //   exit(1);
-  // }
+  resolveIP(domain);
+  char* domain_cstr = stringToCString(domain);
 
-  // int URIEnd = unparsedURL.find(":", schemaEnd+1);
-  // if(URIEnd == -1 || unparsedURL.find("/", schemaEnd+1) < URIEnd) //the colon isn't there; port number is unspecified
-  //   URIEnd = unparsedURL.find("/", schemaEnd+1);
-  // else //otherwise there's a port number specified
-  // {
-
-  // }
-
-
-
-  exit(1);
-
-
-
-  // HttpRequest h = new HttpRequest(argv[1]);
-
-
+  //----------FORMAT REQUEST STRING ------------------//
+  requestString = std::string("GET ");
+  requestString.append(path);
+  requestString.append("?q=");
+  requestString.append(query);
+  requestString.append("#");
+  requestString.append(fragment);
+  requestString.append(" HTTP/1.0");
+  std::cout << requestString << std::endl;
+  exit(5);
+  //------CONNECT TO THE SERVER --------------//
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
   struct sockaddr_in serverAddr;
   serverAddr.sin_family = AF_INET;
   serverAddr.sin_port = htonl(portnum);     // short, network byte order
-  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  serverAddr.sin_addr.s_addr = inet_addr(domain_cstr);
   memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero));
+  free(domain_cstr);
 
   // connect to the server
   if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
@@ -124,6 +114,9 @@ int main(int argc, char* argv[])
     ntohs(clientAddr.sin_port) << std::endl;
 
 
+
+
+  // ---------- SEND DATA TO THE SERVER --------- //
   // send/receive data to/from connection
   bool isEnd = false;
   std::string input;
