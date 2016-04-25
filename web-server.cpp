@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     return 2;
   }
 
-  //FIX: exits all connections when one connection closes
+  //Start and continue accepting connections
   std::vector<std::thread> thread_vec;
   while (1) {
 	  // set socket to listen status
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 		return 3;
 	  }
 
-	  // accept a new connection
+	  // accept a new connection, each new one gets its own socket
 	  struct sockaddr_in clientAddr;
 	  socklen_t clientAddrSize = sizeof(clientAddr);
 	  int clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize);
@@ -106,6 +106,7 @@ int main(int argc, char* argv[])
 		  return 4;
 	  }
 
+	  //Have each new connection get its own thread to resolve request
 	  std::thread t(handle_one_connection, clientAddr, clientSockfd);
 	  thread_vec.push_back(move(t));
   }
@@ -127,32 +128,35 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	// read/write data from/into the connection
 	bool isEnd = false;
 	char buf[20] = { 0 };
+	int total_size = 0;
+	int size_recv;
 	std::stringstream ss;
 
 	while (!isEnd) {
 		memset(buf, '\0', sizeof(buf));
 
-		if (recv(clientSockfd, buf, 20, 0) == -1) {
+		if (size_recv = recv(clientSockfd, buf, 20, 0) == -1) {
 			// perror("recv");
 			// exit(5);
       break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
 		}
-
+		total_size += size_recv;
 		ss << buf << std::endl;
 		std::cout << buf << std::endl;
 
-
-		if (send(clientSockfd, buf, 20, 0) == -1) {
-			// perror("send");
-			// exit(6);
-      break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
-		}
-
-		if (ss.str() == "close\n")
-			break;
-
-		ss.str("");
 	}
+
+	if (send(clientSockfd, ss.str(), total_size, 0) == -1)
+		//		if (send(clientSockfd, buf, 20, 0) == -1) {
+		// perror("send");
+		// exit(6);
+		break; //just close the sockFD is we can't receive from the client: if the client goes away we assume the port is free
+	}
+
+	if (ss.str() == "close\n")
+		break;
+
+//	ss.str("");
 
 	close(clientSockfd);
 }

@@ -111,6 +111,7 @@ int main(int argc, char* argv[])
     return 2;
   }
 
+  //get client info; mostly just need the port number that was assigned by kernel
   struct sockaddr_in clientAddr;
   socklen_t clientAddrLen = sizeof(clientAddr);
   if (getsockname(sockfd, (struct sockaddr *)&clientAddr, &clientAddrLen) == -1) {
