@@ -215,7 +215,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
 	if (it != tokens.end() && *it != "HTTP/1.0") {
 		if (statusCode == "200")
-			statusCode = "505";
+			statusCode = "400";
 		std::cout << "Sorry, non-HTTP/1.0 isn't currently supported. You specified: " << *it << std::endl;
 	}
 	protocol = *it;
@@ -261,8 +261,6 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		ReplyString.append(" Not Found ");
 	else if (statusCode == "501")
 		ReplyString.append(" Not Implemented ");
-	else if (statusCode == "505")
-		ReplyString.append("HTTP version not supported");
 	else
 		std::cout << "Bad status code.. how did you get here.." << std::endl;
 	ReplyString.append("\r\n");
