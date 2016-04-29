@@ -58,13 +58,14 @@ main()
 
   // read/write data from/into the connection
   bool isEnd = false;
-  char buf[20] = {0};
+  char buf[200] = {0};
   std::stringstream ss;
+  std::string input;
 
   while (!isEnd) {
     memset(buf, '\0', sizeof(buf));
 
-    if (recv(clientSockfd, buf, 20, 0) == -1) {
+    if (recv(clientSockfd, buf, 200, 0) == -1) {
       perror("recv");
       return 5;
     }
@@ -72,8 +73,9 @@ main()
     ss << buf << std::endl;
     std::cout << buf << std::endl;
 
+std::cin >> input;
 
-    if (send(clientSockfd, buf, 20, 0) == -1) {
+    if (send(clientSockfd, input.c_str(), 20, 0) == -1) {
       perror("send");
       return 6;
     }

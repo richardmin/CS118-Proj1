@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
     }
     ss << buf;
 
-    for(uint i = 0; i < receivedData.length(); i++)
+    for(uint i = 0; i < strlen(buf); i++)
     {
       if(buf[i] == '\r')
       {
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 
     }
     receivedData.append(ss.str());
-    if(rn_found >= 2)// && header_split_found)
+    if(rn_found >= 2 && header_split_found)
       break;
     else if(rn_found >= 2)
     {

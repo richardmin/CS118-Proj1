@@ -3,17 +3,20 @@
 using namespace std;
 int main()
 {
-	char buf[] = "wtf is this shit\r\n\r\n";
+	char buf[] = "GET / HTTP/1.0\r\n";
 
 	int rn_found = 0;
-    bool r_found = false;
+  bool r_found = false;
+  bool header_split_found = false;
+  while(1)
+  {
     for(uint i = 0; i < strlen(buf); i++)
     {
       if(buf[i] == '\r')
       {
         if(r_found)
           rn_found = 0;
-        
+
         r_found = true;
 
       }
@@ -35,7 +38,7 @@ int main()
 
       if(rn_found >= 2)
       {
-		std::cout << "found end!" << std::endl;
+        std::cout << "found end!" << std::endl;
         break;
       }
 
@@ -43,10 +46,12 @@ int main()
 
     if(rn_found >= 2)
     {
-    
+      break;
     }
     else
     {
-    	std::cout << "failed :(" << std::endl;
-    }
+     std::cout << "failed :(" << std::endl;
+   }
+ }
+ std::cout << "we made it" << std::endl;
 }
