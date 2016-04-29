@@ -149,30 +149,17 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			//			return 5;
 		}
 		ss << buf;
-<<<<<<< HEAD
-		// std::cout << "Buf is :" << buf;
-		// std::cout << "with size " << strlen(buf) << std::endl;
-=======
->>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 		
 		for (uint i = 0; i < strlen(buf); i++)
 		{
 			if (buf[i] == '\r')
 			{
-<<<<<<< HEAD
-				// std::cout << "Found r at " << i << std::endl;
-=======
->>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 				if (r_found)
 					rn_found = 0;
 				r_found = true;
 			}
 			else if (buf[i] == '\n')
 			{
-<<<<<<< HEAD
-				// std::cout << "Found n at " << i << std::endl;
-=======
->>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 				if (r_found)
 					rn_found++;
 				else
@@ -186,31 +173,14 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			}
 
 			if (rn_found >= 2)
-<<<<<<< HEAD
-			{
-				// std::cout << "found end!" << std::endl;
-=======
->>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 				break;
 		}
 		receivedData.append(ss.str());
 
 		if (rn_found >= 2)
 			break;
-<<<<<<< HEAD
-		}
-		else
-		{
-			// std::cout << "failed :(" << std::endl;
-		}
 		ss.str("");
 	}
-	// std::cout << "we made it" << std::endl;
-
-=======
-		ss.str("");
-	}
->>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 
 
 	RequestString = receivedData;
@@ -223,36 +193,22 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	boost::char_separator<char> sep(" ");
 	boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
 	boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
-<<<<<<< HEAD
-	// while (1) {
-		//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
-		if (*it != "GET") {
-=======
 
 	//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
 	if (it != tokens.end() && *it != "GET") {
 		if (statusCode == "200")	//ALWAYS return the first error message; ie. dont rewrite error codes if theyre are multiple errors in client's request
->>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 			statusCode = "501";
 		std::cout << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
 	}
 	method = *it;
 	++it;
 
-<<<<<<< HEAD
-		if ((*it).substr(0,1) != "/") { //must be prepended with a lsahs
-			if (statusCode == "200")
-				statusCode = "400";
-			std::cout << "Invalid path name given: " << *it << std::endl;
-		}
-=======
 	if (it != tokens.end() && (*it).substr(0,1) != "/") {
 		if (statusCode == "200")
 			statusCode = "400";
 		std::cout << "Invalid path name given: " << *it << std::endl;
 	}
 	if (it != tokens.end()) {
->>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 		path = *it;
 		++it;
 	}
