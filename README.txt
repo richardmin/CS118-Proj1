@@ -9,6 +9,3 @@ Please note that the specifying http protocol is mandatory for web-client.
 The vagrant file has been edited so that it also installs boost automatically, which we use for extra credit.
 gcc 4.9 is used for the sake of regex.
 The vagrant file also has more memory allocated to it (2 Gigs).
-
-There is a cpp-netlib dependency; install it using ./install_cppnetlib.sh.
-	If the script doesn't work make sure it's chmoded.

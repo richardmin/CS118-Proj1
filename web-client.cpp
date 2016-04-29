@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
@@ -16,6 +17,7 @@
 #include <string>
 #include <regex>
 #include <vector>
+#include <fstream>
 
 #include <boost/regex.hpp>
 #include <boost/tokenizer.hpp>
@@ -33,7 +35,7 @@ int main(int argc, char* argv[])
   //==================READ ARGUMENTS================
   if(argc != 2)
   {
-    std::cout << "Usage: " << argv[0] << " <URL>" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <URL> [url] [url] ... " << std::endl;
     exit(1);
   }
   
@@ -49,6 +51,15 @@ int main(int argc, char* argv[])
       port = std::string(url_matches[3].first, url_matches[3].second);
       path = std::string(url_matches[4].first, url_matches[4].second);
       fileName = path.substr(path.find_last_of("/")+1);
+      if(fileName == "")
+      {
+        fileName = path.substr(path.substr(0, path.find_last_of("/")).find_last_of("/")+1);
+        fileName = fileName.substr(0, fileName.size()-1);
+      }
+      if(fileName == "")
+      {
+        fileName = "index.html";
+      }
       query = std::string(url_matches[5].first, url_matches[5].second);
       fragment = std::string(url_matches[6].first, url_matches[6].second);
   }
@@ -107,7 +118,7 @@ int main(int argc, char* argv[])
   serverAddr.sin_port = htons(portnum);     // short, network byte order
   serverAddr.sin_addr.s_addr = inet_addr(domain_cstr);
   memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero));
-  std::cout << "domain: " << domain_cstr << ":" << portnum << std::endl;
+  // std::cout << "domain: " << domain_cstr << ":" << portnum << std::endl;
   free(domain_cstr);
 
 
@@ -127,8 +138,8 @@ int main(int argc, char* argv[])
 
   char ipstr[INET_ADDRSTRLEN] = {'\0'};
   inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
-  std::cout << "Set up a connection from: " << ipstr << ":" <<
-    ntohs(clientAddr.sin_port) << std::endl;
+  // std::cout << "Set up a connection from: " << ipstr << ":" <<
+    // ntohs(clientAddr.sin_port) << std::endl;
 
 
 
@@ -138,7 +149,7 @@ int main(int argc, char* argv[])
   // ---------- SEND DATA TO THE SERVER --------- //
   // send/receive data to/from connection
 
-    std::cout << requestString << std::endl;
+    // std::cout << requestString << std::endl;
     if (send(sockfd, requestString.c_str(), requestString.size(), 0) == -1) {
     perror("send");
     return 4;
@@ -202,7 +213,7 @@ int main(int argc, char* argv[])
     ss.str("");
   }
 
-  std::cout << unparsedHeaders << std::endl;
+  std::cerr << unparsedHeaders << std::endl;
 
 
   //Trying to do some parsing.. :/
@@ -210,7 +221,7 @@ int main(int argc, char* argv[])
   std::vector<std::string> RequestVector = split_by_carriage_return(unparsedHeaders);
   boost::char_separator<char> sep(" ");
 
-  if(true) {// lazy solution to make the variables non permanent
+  {// lazy solution to make the variables non permanent
     std::string headerLine = RequestVector[0];
     
     boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
@@ -229,7 +240,7 @@ int main(int argc, char* argv[])
     ++it;
 
     if (it == tokens.end() || *it != "OK") {
-      std::cerr << "Status not ok!" << std::endl;
+      std::cerr << "Status not OK!" << std::endl;
       exit(1);
     }
   }
@@ -252,7 +263,27 @@ int main(int argc, char* argv[])
     }
   }
 
-  std::cout << fileName << std::endl;
+  // -------- PREPARE THE FILE STREAM TO OUTPUT TO ------------ //
+  std::string parsedfileName = fileName;
+
+  struct stat st;
+  int st_result;
+  // std::cout << result == 0 << std::endl;
+
+
+  int j = 1;
+  while((st_result = stat(parsedfileName.c_str(), &st)) == 0)
+  {
+    parsedfileName = fileName;
+    parsedfileName += " (";
+    parsedfileName += std::to_string(j);
+    parsedfileName += ")";
+
+  }
+
+  std::ofstream of(parsedfileName);
+    of << messageBody;  
+
 
   ss.str("");
   
@@ -267,16 +298,20 @@ int main(int argc, char* argv[])
     if(x == 0) //no more bytes to read. Persistent connections are NOT supported.
       break;
 
+    of << buf;
+
     messageBody.append(buf);
   }
-
-  std::cout << messageBody;
+  // struct stat st;
+  // std::cout << messageBody;
 
 
   close(sockfd);
+  of.close();
+
+  // while ()
+    // messageBody;
   // char buf[256];
-
-
 
 
 
