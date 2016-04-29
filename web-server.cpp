@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <sys/stat.h> //fstat for file size
 
 #include <iostream>
 #include <sstream>
@@ -25,7 +26,7 @@ void resolveIP(std::string& hostname); //note this only gets the first IP
 void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd);
 std::vector<std::string> split_by_carriage_return(std::string input);
 //std::vector<std::string> split_by_double_carriage_return(std::string input);
-std::string statusCode = "200";
+std::string statusCode = "200";	//Default success status code
 
 int main(int argc, char* argv[])
 {
@@ -133,46 +134,45 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	// read/write data from/into the connection
 	std::string RequestString;
 	std::string ReplyString;
-	char buf[21] = { 0 };
+	char buf[256] = { 0 };
 	std::stringstream ss;
 	std::string receivedData;
 
-	/*
-	memset(buf, '\0', sizeof(buf));
-	if (recv(clientSockfd, buf, 21, 0) == -1) {
-		perror("recv");
-		//			return 5;
-	}
-	receivedData.append(ss.str());
-	std::cout << receivedData << std::endl;
-	ss.str("");
-	*/
 	//Keep collecting data until we reach \r\n\r\n
 	int rn_found = 0;
 	bool r_found = false;
 	while (1)
 	{
 		memset(buf, '\0', sizeof(buf));
-		if (recv(clientSockfd, buf, 21, 0) == -1) {
+		if (recv(clientSockfd, buf, 256, 0) == -1) {
 			perror("recv");
 			//			return 5;
 		}
 		ss << buf;
+<<<<<<< HEAD
 		// std::cout << "Buf is :" << buf;
 		// std::cout << "with size " << strlen(buf) << std::endl;
+=======
+>>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 		
 		for (uint i = 0; i < strlen(buf); i++)
 		{
 			if (buf[i] == '\r')
 			{
+<<<<<<< HEAD
 				// std::cout << "Found r at " << i << std::endl;
+=======
+>>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 				if (r_found)
 					rn_found = 0;
 				r_found = true;
 			}
 			else if (buf[i] == '\n')
 			{
+<<<<<<< HEAD
 				// std::cout << "Found n at " << i << std::endl;
+=======
+>>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 				if (r_found)
 					rn_found++;
 				else
@@ -186,17 +186,18 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			}
 
 			if (rn_found >= 2)
+<<<<<<< HEAD
 			{
 				// std::cout << "found end!" << std::endl;
+=======
+>>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 				break;
-			}
 		}
 		receivedData.append(ss.str());
-		std::cout << receivedData << std::endl;
 
 		if (rn_found >= 2)
-		{
 			break;
+<<<<<<< HEAD
 		}
 		else
 		{
@@ -206,10 +207,15 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	}
 	// std::cout << "we made it" << std::endl;
 
+=======
+		ss.str("");
+	}
+>>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 
 
 	RequestString = receivedData;
-	//Trying to do some parsing.. :/
+	//Parse the first line of the HTTP Request Message
+	//Should be of format GET /path HTTP/1.0
 	// std::cout << RequestString << std::endl;
 	std::vector<std::string> RequestVector = split_by_carriage_return(RequestString);
 	std::string headerLine = RequestVector[0];
@@ -217,34 +223,77 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	boost::char_separator<char> sep(" ");
 	boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
 	boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+<<<<<<< HEAD
 	// while (1) {
 		//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
 		if (*it != "GET") {
-			statusCode = "501";
-			std::cout << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
-		}
-		method = *it;
-		++it;
+=======
 
+	//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
+	if (it != tokens.end() && *it != "GET") {
+		if (statusCode == "200")	//ALWAYS return the first error message; ie. dont rewrite error codes if theyre are multiple errors in client's request
+>>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
+			statusCode = "501";
+		std::cout << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
+	}
+	method = *it;
+	++it;
+
+<<<<<<< HEAD
 		if ((*it).substr(0,1) != "/") { //must be prepended with a lsahs
 			if (statusCode == "200")
 				statusCode = "400";
 			std::cout << "Invalid path name given: " << *it << std::endl;
 		}
+=======
+	if (it != tokens.end() && (*it).substr(0,1) != "/") {
+		if (statusCode == "200")
+			statusCode = "400";
+		std::cout << "Invalid path name given: " << *it << std::endl;
+	}
+	if (it != tokens.end()) {
+>>>>>>> 512f7d053487229c297d1ba399a16073d4ba4677
 		path = *it;
 		++it;
+	}
 
-		if (*it != "HTTP/1.0") {
+	if (it != tokens.end() && *it != "HTTP/1.0") {
+		if (statusCode == "200")
+			statusCode = "400";
+		std::cout << "Sorry, non-HTTP/1.0 isn't currently supported. You specified: " << *it << std::endl;
+	}
+	protocol = *it;
+
+	//Get the file requested by the request path
+	FILE *fp;
+	std::string myfile;
+	std::string relative_path = "." + path;
+	int contentLength = 0;
+	const char* file_path_cstr = relative_path.data();
+	fp = fopen(file_path_cstr, "r");
+	if (fp == NULL) {
+		perror("open");
+		if (statusCode == "200")
+			statusCode = "404";
+		std::cout << "Sorry, Couldnt find file with path: " << file_path_cstr << std::endl;
+	} 
+	else {
+		int fd = fileno(fp);
+		struct stat fileStats;
+		fstat(fd, &fileStats);
+		if (S_ISREG(fileStats.st_mode))		//Check that the file is a REGular file ie. '/' will be considered invalid and return 404
+			contentLength = fileStats.st_size;
+		else {
 			if (statusCode == "200")
-				statusCode = "400";
-			std::cout << "Sorry, non-HTTP/1.0 isn't currently supported. You specified: " << *it << std::endl;
+				statusCode = "404";
+			fclose(fp);
+			fp = NULL;
 		}
-		protocol = *it;
-	// 	break;
-	// // }
+	}
+	
+
 
 	//TODO: Implement these variables!!!!!????????????!?!?!
-	int contentLength = 0;
 	ReplyString.append(protocol);
 	ReplyString.append(" ");
 	ReplyString.append(statusCode);
@@ -260,12 +309,25 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		std::cout << "Bad status code.. how did you get here.." << std::endl;
 	ReplyString.append("\r\n");
 	ReplyString.append("Content-Length: ");
-	ReplyString += '0' + contentLength;
+	std::string contentLength_str = std::to_string(contentLength);
+	ReplyString.append(contentLength_str);
 	ReplyString.append("\r\n\r\n");
-	std::cout << ReplyString << std::endl;
-	if (send(clientSockfd, ReplyString.c_str(), ReplyString.size(), 0) == -1) 
-		std::cout << "Ran into error sending thingy ... " << std::endl;
+	if (fp != NULL) {
+		int ch;
+		while ((ch = fgetc(fp)) != EOF) {
+			ReplyString += (char) ch;
+		}
+	}
 
+
+	std::cout << ReplyString << std::endl;
+	if (send(clientSockfd, ReplyString.c_str(), ReplyString.size(), 0) == -1) {
+		perror("send");
+		exit(-1);
+	}
+
+	if (fp != NULL)
+		fclose(fp);
 	close(clientSockfd);
 }
 
@@ -329,7 +391,6 @@ std::vector<std::string> split_by_carriage_return(std::string input) {
 		//There were NO \r\n's at all
 		if (n_lines == 0 && index == input.size()) {
 			statusCode = "400";
-			std::cout << "Bad request: don't forget to change this code so that you actually set the code variable" << std::endl;
 			break;
 		}
 		//There are no more \r\n's
