@@ -25,7 +25,7 @@ void resolveIP(std::string& hostname); //note this only gets the first IP
 void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd);
 std::vector<std::string> split_by_carriage_return(std::string input);
 //std::vector<std::string> split_by_double_carriage_return(std::string input);
-std::string statusCode = "200";
+std::string statusCode = "200";	//Default success status code
 
 int main(int argc, char* argv[])
 {
@@ -133,27 +133,17 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	// read/write data from/into the connection
 	std::string RequestString;
 	std::string ReplyString;
-	char buf[21] = { 0 };
+	char buf[256] = { 0 };
 	std::stringstream ss;
 	std::string receivedData;
 
-	/*
-	memset(buf, '\0', sizeof(buf));
-	if (recv(clientSockfd, buf, 21, 0) == -1) {
-		perror("recv");
-		//			return 5;
-	}
-	receivedData.append(ss.str());
-	std::cout << receivedData << std::endl;
-	ss.str("");
-	*/
 	//Keep collecting data until we reach \r\n\r\n
 	int rn_found = 0;
 	bool r_found = false;
 	while (1)
 	{
 		memset(buf, '\0', sizeof(buf));
-		if (recv(clientSockfd, buf, 21, 0) == -1) {
+		if (recv(clientSockfd, buf, 256, 0) == -1) {
 			perror("recv");
 			//			return 5;
 		}
@@ -165,14 +155,12 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		{
 			if (buf[i] == '\r')
 			{
-				std::cout << "Found r at " << i << std::endl;
 				if (r_found)
 					rn_found = 0;
 				r_found = true;
 			}
 			else if (buf[i] == '\n')
 			{
-				std::cout << "Found n at " << i << std::endl;
 				if (r_found)
 					rn_found++;
 				else
@@ -186,22 +174,13 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			}
 
 			if (rn_found >= 2)
-			{
-				std::cout << "found end!" << std::endl;
 				break;
-			}
 		}
 		receivedData.append(ss.str());
 		std::cout << receivedData << std::endl;
 
 		if (rn_found >= 2)
-		{
 			break;
-		}
-		else
-		{
-			std::cout << "failed :(" << std::endl;
-		}
 		ss.str("");
 	}
 	std::cout << "we made it" << std::endl;
@@ -209,7 +188,8 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
 
 	RequestString = receivedData;
-	//Trying to do some parsing.. :/
+	//Parse the first line of the HTTP Request Message
+	//Should be of format GET /path HTTP/1.0
 	// std::cout << RequestString << std::endl;
 	std::vector<std::string> RequestVector = split_by_carriage_return(RequestString);
 	std::string headerLine = RequestVector[0];
@@ -243,8 +223,35 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		break;
 	}
 
+	//Get the file requested by the request path
+	FILE *fp;
+	const char* file_path = path.data();
+	fp = fopen(file_path, "r");
+	if (fp == NULL) {
+		perror("open");
+		if (statusCode == "200")
+			statusCode = "404";
+		std::cout << "Sorry, Couldnt find page: " << path << std::endl;
+	}
+	/*
+	std::string myfile;
+	char readBuf[1024] = { 0 };
+	int result;
+	while (!feof(fp))
+	{
+		memset(buf, '\0', sizeof(buf));
+		result = fread(readBuf, 1, 1024, fp);
+		if (result != 1024) {
+			std::cout << "Reading Error" << std::endl;
+			break;
+		}
+		ss << readBuf;
+		myfile.append(ss.str());
+		ss.str("");
+	}
+	*/
+
 	//TODO: Implement these variables!!!!!????????????!?!?!
-	int contentLength = 0;
 	ReplyString.append(protocol);
 	ReplyString.append(" ");
 	ReplyString.append(statusCode);
@@ -258,14 +265,15 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		ReplyString.append(" Not Implemented ");
 	else
 		std::cout << "Bad status code.. how did you get here.." << std::endl;
-	ReplyString.append("\r\n");
-	ReplyString.append("Content-Length: ");
-	ReplyString += '0' + contentLength;
 	ReplyString.append("\r\n\r\n");
+	ReplyString.append(myfile);
+
 	std::cout << ReplyString << std::endl;
 	if (send(clientSockfd, ReplyString.c_str(), ReplyString.size(), 0) == -1) 
 		std::cout << "Ran into error sending thingy ... " << std::endl;
 
+	if (fp != NULL)
+		fclose(fp);
 	close(clientSockfd);
 }
 
