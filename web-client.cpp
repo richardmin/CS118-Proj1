@@ -93,18 +93,20 @@ int main(int argc, char* argv[])
   }
 
   requestString.append(" HTTP/1.0\r\n\r\n");  
-  std::cout << requestString << std::endl;
-  exit(5);
+  // std::cout << requestString << std::endl;
+  // exit(5);
   //------CONNECT TO THE SERVER --------------//
   // create a socket using TCP IP
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
   struct sockaddr_in serverAddr;
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htonl(portnum);     // short, network byte order
+  serverAddr.sin_port = htons(portnum);     // short, network byte order
   serverAddr.sin_addr.s_addr = inet_addr(domain_cstr);
   memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero));
+  std::cout << "domain: " << domain_cstr << ":" << portnum << std::endl;
   free(domain_cstr);
+
 
   // connect to the server
   if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
@@ -128,38 +130,79 @@ int main(int argc, char* argv[])
 
 
 
+
+
   // ---------- SEND DATA TO THE SERVER --------- //
   // send/receive data to/from connection
-  bool isEnd = false;
-  std::string input;
+
+    if (send(sockfd, requestString.c_str(), requestString.size(), 0) == -1) {
+    perror("send");
+    return 4;
+  }
+
+
+  //------------- RECEIVE SERVER RESPONSE ------------- //
   char buf[20] = {0};
   std::stringstream ss;
+  std::string receivedData;
 
-  while (!isEnd) {
+  int rn_found = 0;
+  bool r_found = false;
+  bool header_split_found = false;
+  while (1) {
     memset(buf, '\0', sizeof(buf));
-
-    std::cout << "send: ";
-    std::cin >> input;
-    if (send(sockfd, input.c_str(), input.size(), 0) == -1) {
-      perror("send");
-      return 4;
-    }
-
 
     if (recv(sockfd, buf, 20, 0) == -1) {
       perror("recv");
       return 5;
     }
-    ss << buf << std::endl;
-    std::cout << "echo: ";
-    std::cout << buf << std::endl;
+    ss << buf;
 
-    if (ss.str() == "close\n")
+    for(uint i = 0; i < receivedData.length(); i++)
+    {
+      if(buf[i] == '\r')
+      {
+        if(r_found)
+          rn_found = 0;
+        
+        r_found = true;
+
+      }
+      else if(buf[i] == '\n')
+      {
+
+        if(r_found)
+          rn_found++;
+        else
+          rn_found = 0;
+
+        r_found = false;
+      }
+      else
+      {
+        r_found = false;
+        rn_found = 0;
+      }
+
+      if(rn_found >= 2)
+        break;
+
+    }
+    receivedData.append(ss.str());
+    if(rn_found >= 2)// && header_split_found)
       break;
+    else if(rn_found >= 2)
+    {
+      header_split_found = true;
+      rn_found = 0;
+    }
+    
 
+    
     ss.str("");
   }
 
+  std::cout << receivedData << std::endl;
   close(sockfd);
 
   return 0;
