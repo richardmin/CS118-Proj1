@@ -176,7 +176,6 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 				break;
 		}
 		receivedData.append(ss.str());
-		std::cout << receivedData << std::endl;
 
 		if (rn_found >= 2)
 			break;
@@ -197,7 +196,8 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
 	//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
 	if (it != tokens.end() && *it != "GET") {
-		statusCode = "501";
+		if (statusCode == "200")	//ALWAYS return the first error message; ie. dont rewrite error codes if theyre are multiple errors in client's request
+			statusCode = "501";
 		std::cout << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
 	}
 	method = *it;
@@ -235,9 +235,16 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	} 
 	else {
 		int fd = fileno(fp);
-		struct stat f_size;
-		fstat(fd, &f_size);
-		contentLength = f_size.st_size;
+		struct stat fileStats;
+		fstat(fd, &fileStats);
+		if (S_ISREG(fileStats.st_mode))		//Check that the file is a REGular file ie. '/' will be considered invalid and return 404
+			contentLength = fileStats.st_size;
+		else {
+			if (statusCode == "200")
+				statusCode = "404";
+			fclose(fp);
+			fp = NULL;
+		}
 	}
 	
 
