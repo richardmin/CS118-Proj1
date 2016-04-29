@@ -1,5 +1,5 @@
 CXX=g++
-CXXOPTIMIZE= -O2
+CXXOPTIMIZE= -O0
 BOOST=-lboost_regex
 CXXFLAGS= -g $(CXXOPTIMIZE) -pthread -Wall -std=c++11 
 LIBRARIES=$(BOOST)

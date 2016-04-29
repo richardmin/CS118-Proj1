@@ -158,21 +158,21 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			//			return 5;
 		}
 		ss << buf;
-		std::cout << "Buf is :" << buf;
-		std::cout << "with size " << strlen(buf) << std::endl;
+		// std::cout << "Buf is :" << buf;
+		// std::cout << "with size " << strlen(buf) << std::endl;
 		
 		for (uint i = 0; i < strlen(buf); i++)
 		{
 			if (buf[i] == '\r')
 			{
-				std::cout << "Found r at " << i << std::endl;
+				// std::cout << "Found r at " << i << std::endl;
 				if (r_found)
 					rn_found = 0;
 				r_found = true;
 			}
 			else if (buf[i] == '\n')
 			{
-				std::cout << "Found n at " << i << std::endl;
+				// std::cout << "Found n at " << i << std::endl;
 				if (r_found)
 					rn_found++;
 				else
@@ -187,7 +187,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
 			if (rn_found >= 2)
 			{
-				std::cout << "found end!" << std::endl;
+				// std::cout << "found end!" << std::endl;
 				break;
 			}
 		}
@@ -200,11 +200,11 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		}
 		else
 		{
-			std::cout << "failed :(" << std::endl;
+			// std::cout << "failed :(" << std::endl;
 		}
 		ss.str("");
 	}
-	std::cout << "we made it" << std::endl;
+	// std::cout << "we made it" << std::endl;
 
 
 
@@ -217,7 +217,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	boost::char_separator<char> sep(" ");
 	boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
 	boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
-	while (1) {
+	// while (1) {
 		//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
 		if (*it != "GET") {
 			statusCode = "501";
@@ -226,7 +226,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		method = *it;
 		++it;
 
-		if ((*it).substr(0,1) != "/") {
+		if ((*it).substr(0,1) != "/") { //must be prepended with a lsahs
 			if (statusCode == "200")
 				statusCode = "400";
 			std::cout << "Invalid path name given: " << *it << std::endl;
@@ -240,8 +240,8 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			std::cout << "Sorry, non-HTTP/1.0 isn't currently supported. You specified: " << *it << std::endl;
 		}
 		protocol = *it;
-		break;
-	}
+	// 	break;
+	// // }
 
 	//TODO: Implement these variables!!!!!????????????!?!?!
 	int contentLength = 0;

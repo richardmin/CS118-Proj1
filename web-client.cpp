@@ -15,17 +15,20 @@
 #include <sstream>
 #include <string>
 #include <regex>
+#include <vector>
 
 #include <boost/regex.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/algorithm/string.hpp>
 
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
-
+std::vector<std::string> split_by_carriage_return(std::string input);
 
 int main(int argc, char* argv[])
 {
   int portnum = 80;
-  std::string protocol, domain, port, path, query, fragment, requestString;
+  std::string protocol, domain, port, path, query, fragment, requestString, fileName;
 
   //==================READ ARGUMENTS================
   if(argc != 2)
@@ -45,6 +48,7 @@ int main(int argc, char* argv[])
       domain = std::string(url_matches[2].first, url_matches[2].second);
       port = std::string(url_matches[3].first, url_matches[3].second);
       path = std::string(url_matches[4].first, url_matches[4].second);
+      fileName = path.substr(path.find_last_of("/")+1);
       query = std::string(url_matches[5].first, url_matches[5].second);
       fragment = std::string(url_matches[6].first, url_matches[6].second);
   }
@@ -91,7 +95,6 @@ int main(int argc, char* argv[])
     requestString.append("#");
     requestString.append(fragment);
   }
-
   requestString.append(" HTTP/1.0\r\n\r\n");  
   // std::cout << requestString << std::endl;
   // exit(5);
@@ -142,13 +145,13 @@ int main(int argc, char* argv[])
 
 
   //------------- RECEIVE SERVER RESPONSE ------------- //
-  char buf[20] = {0};
-  std::stringstream ss;
-  std::string receivedData;
 
   int rn_found = 0;
   bool r_found = false;
-  bool header_split_found = false;
+  char buf[20] = {0};
+  std::string unparsedHeaders;
+  std::string messageBody;
+  std::stringstream ss;
   while (1) {
     memset(buf, '\0', sizeof(buf));
 
@@ -158,7 +161,8 @@ int main(int argc, char* argv[])
     }
     ss << buf;
 
-    for(uint i = 0; i < strlen(buf); i++)
+    uint i;
+    for(i = 0; i < strlen(buf); i++)
     {
       if(buf[i] == '\r')
       {
@@ -186,24 +190,95 @@ int main(int argc, char* argv[])
 
       if(rn_found >= 2)
         break;
-
+      unparsedHeaders += buf[i];
     }
-    receivedData.append(ss.str());
-    if(rn_found >= 2 && header_split_found)
-      break;
-    else if(rn_found >= 2)
+    for(; i < strlen(buf); i++)
     {
-      header_split_found = true;
-      rn_found = 0;
+      messageBody += buf[i];
     }
-    
-
-    
+    if(rn_found >= 2)
+      break;
     ss.str("");
   }
 
-  std::cout << receivedData << std::endl;
+  std::cout << unparsedHeaders << std::endl;
+
+
+  //Trying to do some parsing.. :/
+  // std::cout << RequestString << std::endl;
+  std::vector<std::string> RequestVector = split_by_carriage_return(unparsedHeaders);
+  boost::char_separator<char> sep(" ");
+
+  if(true) {// lazy solution to make the variables non permanent
+    std::string headerLine = RequestVector[0];
+    
+    boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
+    boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+    if (it == tokens.end() || *it != "HTTP/1.0") {
+      std::cerr << "Server responded unexpectedly! (Not a HTTP 1.1 or 1.0 response)" << std::endl;
+      exit(1);
+    }
+    ++it;
+
+    if (it == tokens.end() || *it != "200") {
+      std::cerr << "Server error code: " << *it << std::endl;
+      exit(1);
+    }
+
+    ++it;
+
+    if (it == tokens.end() || *it != "OK") {
+      std::cerr << "Status not ok!" << std::endl;
+      exit(1);
+    }
+  }
+
+
+  int content_length = -1;
+  for(uint i = 1; i < RequestVector.size(); i++)
+  {
+    std::string headerLine = RequestVector[i];
+    boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
+    boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+
+    if(it != tokens.end() && boost::iequals(*it, "content-length:"))
+    {
+      ++it;
+      if(it != tokens.end())
+      {
+        content_length = std::stoi(*it);
+      }
+    }
+  }
+
+  std::cout << fileName << std::endl;
+
+  ss.str("");
+  
+  for(int i = 0; i != content_length; i++) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
+  {
+    memset(buf, '\0', sizeof(buf));
+    ssize_t x;
+    if ((x = recv(sockfd, buf, 20, 0)) == -1) {
+      perror("recv");
+      return 5;
+    }
+    if(x == 0) //no more bytes to read. Persistent connections are NOT supported.
+      break;
+
+    messageBody.append(buf);
+  }
+
+  std::cout << messageBody;
+
+
   close(sockfd);
+  // char buf[256];
+
+
+
+
+
 
   return 0;
 }
@@ -259,3 +334,30 @@ void resolveIP(std::string& hostname)
   free(hostname_cstr);
 }
 
+
+
+std::vector<std::string> split_by_carriage_return(std::string input) {
+  std::vector<std::string> str_vector;
+  std::size_t index, n_lines = 0;
+  std::string line;
+  while (1) {
+    index = input.find("\r\n");
+    //There were NO \r\n's at all
+    if (n_lines == 0 && index == input.size()) {
+      break;
+    }
+    //There are no more \r\n's
+    if (index == input.size())
+      break;
+
+    line = input.substr(0, index);
+    //If we have consecutive carriage returns, we reached the end of one header section
+    if (line.size() <= 0) {
+      break;
+    }
+    str_vector.push_back(line);
+    n_lines++;
+    input = input.substr(index + 2);
+  }
+  return str_vector;
+}
