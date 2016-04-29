@@ -204,6 +204,7 @@ int main(int argc, char* argv[])
         break;
       unparsedHeaders += buf[i];
     }
+    i++;
     for(; i < strlen(buf); i++)
     {
       messageBody += buf[i];
@@ -226,7 +227,7 @@ int main(int argc, char* argv[])
     
     boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
     boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
-    if (it == tokens.end() || *it != "HTTP/1.0") {
+    if (it == tokens.end() || *it != "HTTP/1.0" || *it != "HTTP/1.1") {
       std::cerr << "Server responded unexpectedly! (Not a HTTP 1.1 or 1.0 response)" << std::endl;
       exit(1);
     }
@@ -268,8 +269,6 @@ int main(int argc, char* argv[])
 
   struct stat st;
   int st_result;
-  // std::cout << result == 0 << std::endl;
-
 
   int j = 1;
   while((st_result = stat(parsedfileName.c_str(), &st)) == 0)
@@ -278,7 +277,7 @@ int main(int argc, char* argv[])
     parsedfileName += " (";
     parsedfileName += std::to_string(j);
     parsedfileName += ")";
-
+    j++;
   }
 
   std::ofstream of(parsedfileName);
