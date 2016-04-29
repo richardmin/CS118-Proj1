@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
   resolveIP(hostname); //resolves the IP passed in into the first IP address possibly calculated
 
   // verify that the hostnames are checked properly
-  // std::cout << "hostname: " << hostname << " port num: " << portnum << " file_dir: " << file_dir << std::endl;
+  // std::cerr << "hostname: " << hostname << " port num: " << portnum << " file_dir: " << file_dir << std::endl;
 
   char* hostname_cstr = stringToCString(hostname);
   
@@ -129,7 +129,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	//TODO: SPAWN THREADS FOR CODE FOLLOWING THIS LINE IN THE FUTURE, have main thread continue to accept connections
 	char ipstr[INET_ADDRSTRLEN] = { '\0' };
 	inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
-	std::cout << "Accept a connection from: " << ipstr << ":" <<
+	std::cerr << "Accept a connection from: " << ipstr << ":" <<
 		ntohs(clientAddr.sin_port) << std::endl;
 
 	// read/write data from/into the connection
@@ -150,7 +150,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			//			return 5;
 		}
 		ss << buf;
-		
+
 		for (uint i = 0; i < strlen(buf); i++)
 		{
 			if (buf[i] == '\r')
@@ -185,41 +185,69 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
 
 	RequestString = receivedData;
+	
+
 	//Parse the first line of the HTTP Request Message
 	//Should be of format GET /path HTTP/1.0
-	// std::cout << RequestString << std::endl;
+	// std::cerr << RequestString << std::endl;
 	std::vector<std::string> RequestVector = split_by_carriage_return(RequestString, statusCode);
+	if (RequestVector.size() == 0)
+	{
+		if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1) 
+			perror("send");
+		close(clientSockfd);
+		return;
+	}
 	std::string headerLine = RequestVector[0];
+	if (headerLine == "") {
+		if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1) 
+			perror("send");
+		close(clientSockfd);
+		return;
+		
+	}
 	std::string method, path, protocol;
-	boost::char_separator<char> sep(" ");
-	boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
-	boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+	if (true) {
+		boost::char_separator<char> sep(" ");
+		boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
+		boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
 
-	//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
-	if (it != tokens.end() && *it != "GET") {
-		if (statusCode == "200")	//ALWAYS return the first error message; ie. dont rewrite error codes if theyre are multiple errors in client's request
-			statusCode = "501";
-		std::cout << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
-	}
-	method = *it;
-	++it;
+		if (std::distance(tokens.begin(), tokens.end()) == 0) {	//The tokenized headerLine MUST have a length (ie. " " headerline invalid)
+			if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1)
+				perror("send");
+			close(clientSockfd);
+			return;
+		}
 
-	if (it != tokens.end() && (*it).substr(0,1) != "/") {
-		if (statusCode == "200")
-			statusCode = "400";
-		std::cout << "Invalid path name given: " << *it << std::endl;
-	}
-	if (it != tokens.end()) {
+		//TODO: Give an error code instead of error message!!!!!!!???!?!?!???????
+		if (it != tokens.end() && *it != "GET") {
+			std::cerr << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
+			if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1)
+				perror("send");
+			close(clientSockfd);
+			return;
+		}
+		method = *it;
+		++it;
+		if (it != tokens.end() && (*it).substr(0, 1) != "/") {
+			std::cerr << "Invalid path name given: " << *it << std::endl;
+			if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1)
+				perror("send");
+			close(clientSockfd);
+			return;
+		}
 		path = *it;
 		++it;
-	}
 
-	if (it != tokens.end() && *it != "HTTP/1.0") {
-		if (statusCode == "200")
-			statusCode = "400";
-		std::cout << "Sorry, non-HTTP/1.0 isn't currently supported. You specified: " << *it << std::endl;
+		if (it != tokens.end() && *it != "HTTP/1.0") {
+			std::cerr << "Sorry, non-HTTP/1.0 isn't currently supported. You specified: " << *it << std::endl;
+			if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1)
+				perror("send");
+			close(clientSockfd);
+			return;
+		}
+		protocol = *it;
 	}
-	protocol = *it;
 
 	//Get the file requested by the request path
 	FILE *fp;
@@ -230,10 +258,10 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	fp = fopen(file_path_cstr, "r");
 	if (fp == NULL) {
 		perror("open");
-		if (statusCode == "200")
+		if (statusCode == "200")	//Always return the FIRST error code even if client's request has multiple errors
 			statusCode = "404";
-		std::cout << "Sorry, Couldnt find file with path: " << file_path_cstr << std::endl;
-	} 
+		std::cerr << "Sorry, Couldnt find file with path: " << file_path_cstr << std::endl;
+	}
 	else {
 		int fd = fileno(fp);
 		struct stat fileStats;
@@ -247,7 +275,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			fp = NULL;
 		}
 	}
-	
+
 
 
 	//TODO: Implement these variables!!!!!????????????!?!?!
@@ -260,10 +288,8 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		ReplyString.append(" Bad Request ");
 	else if (statusCode == "404")
 		ReplyString.append(" Not Found ");
-	else if (statusCode == "501")
-		ReplyString.append(" Not Implemented ");
 	else
-		std::cout << "Bad status code.. how did you get here.." << std::endl;
+		std::cerr << "Bad status code.. how did you get here.." << std::endl;
 	ReplyString.append("\r\n");
 	ReplyString.append("Content-Length: ");
 	std::string contentLength_str = std::to_string(contentLength);
@@ -272,12 +298,12 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	if (fp != NULL) {
 		int ch;
 		while ((ch = fgetc(fp)) != EOF) {
-			ReplyString += (char) ch;
+			ReplyString += (char)ch;
 		}
 	}
 
 
-	std::cout << ReplyString << std::endl;
+	std::cerr << ReplyString << std::endl;
 	if (send(clientSockfd, ReplyString.c_str(), ReplyString.size(), 0) == -1) {
 		perror("send");
 		exit(-1);
@@ -286,7 +312,9 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	if (fp != NULL)
 		fclose(fp);
 	close(clientSockfd);
+	
 }
+
 
 char* stringToCString(std::string s)
 {
@@ -294,7 +322,7 @@ char* stringToCString(std::string s)
 	char* s_cpy = (char *)malloc(sizeof(char) * (strlen(s_cstr) + 1));
 	if (s_cpy == NULL)
 	{
-		std::cout << "Malloc Failed" << std::endl;
+		std::cerr << "Malloc Failed" << std::endl;
 		exit(1);
 	}
 
@@ -322,7 +350,7 @@ void resolveIP(std::string& hostname)
   // get address
   int status = 0;
   if ((status = getaddrinfo(hostname_cstr, "80", &hints, &res)) != 0) {
-    std::cout << "couldn't resolve IP address: " << gai_strerror(status) << std::endl;
+    std::cerr << "couldn't resolve IP address: " << gai_strerror(status) << std::endl;
     exit(1);
   }
 
@@ -376,7 +404,7 @@ std::vector<std::string> split_by_double_carriage_return(std::string input) {
 		//There were NO \r\n\r\n's AT ALL
 		if (n_lines == 0 && index == input.size()) {
 			statusCode = "400";
-			std::cout << "Bad request: don't forget to change this code so that you actually set the code variable" << std::endl;
+			std::cerr << "Bad request: don't forget to change this code so that you actually set the code variable" << std::endl;
 			break;
 		}
 		//There were no more \r\n\r\n's
