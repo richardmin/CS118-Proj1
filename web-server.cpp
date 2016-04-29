@@ -24,9 +24,9 @@
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd);
-std::vector<std::string> split_by_carriage_return(std::string input);
+std::vector<std::string> split_by_carriage_return(std::string input, std::string& statusCode);
 //std::vector<std::string> split_by_double_carriage_return(std::string input);
-std::string statusCode = "200";	//Default success status code
+
 
 int main(int argc, char* argv[])
 {
@@ -124,6 +124,7 @@ int main(int argc, char* argv[])
 }
 
 void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
+	std::string statusCode = "200";	//Default success status code
 	//HANDLING A NEW CONNECTION
 	//TODO: SPAWN THREADS FOR CODE FOLLOWING THIS LINE IN THE FUTURE, have main thread continue to accept connections
 	char ipstr[INET_ADDRSTRLEN] = { '\0' };
@@ -187,7 +188,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	//Parse the first line of the HTTP Request Message
 	//Should be of format GET /path HTTP/1.0
 	// std::cout << RequestString << std::endl;
-	std::vector<std::string> RequestVector = split_by_carriage_return(RequestString);
+	std::vector<std::string> RequestVector = split_by_carriage_return(RequestString, statusCode);
 	std::string headerLine = RequestVector[0];
 	std::string method, path, protocol;
 	boost::char_separator<char> sep(" ");
@@ -338,7 +339,7 @@ void resolveIP(std::string& hostname)
 }
 
 
-std::vector<std::string> split_by_carriage_return(std::string input) {
+std::vector<std::string> split_by_carriage_return(std::string input, std::string& statusCode) {
 	std::vector<std::string> str_vector;
 	std::size_t index, n_lines = 0;
 	std::string line;
