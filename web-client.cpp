@@ -138,6 +138,7 @@ int main(int argc, char* argv[])
   // ---------- SEND DATA TO THE SERVER --------- //
   // send/receive data to/from connection
 
+    std::cout << requestString << std::endl;
     if (send(sockfd, requestString.c_str(), requestString.size(), 0) == -1) {
     perror("send");
     return 4;
