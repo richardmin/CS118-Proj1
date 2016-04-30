@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
     
     boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
     boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
-    if (it == tokens.end() || *it != "HTTP/1.0" || *it != "HTTP/1.1") {
+    if (it == tokens.end() || *it != "HTTP/1.0" && *it != "HTTP/1.1") {
       std::cerr << "Server responded unexpectedly! (Not a HTTP 1.1 or 1.0 response)" << std::endl;
       exit(1);
     }
