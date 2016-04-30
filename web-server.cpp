@@ -303,7 +303,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	}
 
 
-	std::cerr << ReplyString << std::endl;
+	// std::cerr << ReplyString << std::endl;
 	if (send(clientSockfd, ReplyString.c_str(), ReplyString.size(), 0) == -1) {
 		perror("send");
 		exit(-1);
