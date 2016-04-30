@@ -297,7 +297,7 @@ int main(int argc, char* argv[])
     if(x == 0) //no more bytes to read. Persistent connections are NOT supported.
       break;
 
-    of << buf;
+    of.write(buf, x);
 
     messageBody.append(buf);
   }
