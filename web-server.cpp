@@ -1,5 +1,3 @@
-#include "HttpRequest.h"
-#include "HttpResponse.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -21,6 +19,8 @@
 
 #include <boost/tokenizer.hpp>
 
+std::string file_dir = ".";
+
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd);
@@ -32,7 +32,6 @@ int main(int argc, char* argv[])
 {
   std::string hostname = "localhost";
   uint portnum = 4000;
-  std::string file_dir = ".";
 
 
   //==============PARSE COMMAND LINE ARGUMENTS================
