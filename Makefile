@@ -18,6 +18,12 @@ web-server: $(CLASSES)
 web-client: $(CLASSES)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
 
+web-server-timeout: $(CLASSES)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
+
+web-client-timeout: $(CLASSES)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
+
 .PHONY: clean
 clean:
 	rm -rf *.o *~ *.gch *.swp *.dSYM web-server web-client a.out *.tar.gz

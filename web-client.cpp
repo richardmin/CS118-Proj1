@@ -143,6 +143,22 @@ int main(int argc, char* argv[])
 
 
 
+    struct timeval timeout;      
+    timeout.tv_sec = 10;
+    timeout.tv_usec = 0;  
+
+
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)) < 0) {
+      perror("setsockopt");
+      return 1;
+    }
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(timeout)) < 0) {
+      perror("setsockopt");
+      return 1;
+      }
+
 
 
 

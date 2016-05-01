@@ -117,6 +117,18 @@ int main(int argc, char* argv[])
 		  return 4;
 	  }
 
+	  // std::cout << " UHHHHH" << std::endl;
+
+	  if (setsockopt(clientSockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)) < 0) {
+	    perror("setsockopt");
+	    return 1;
+	  }
+
+	  if (setsockopt(clientSockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(timeout)) < 0) {
+	    perror("setsockopt");
+	    return 1;
+	    }
+
 	  //Have each new connection get its own thread to resolve request
 	  std::thread t(handle_one_connection, clientAddr, clientSockfd);
 	  thread_vec.push_back(move(t));
