@@ -165,10 +165,12 @@ int main(int argc, char* argv[])
     bool r_found = false;
     char buf[20] = {0};
     std::string unparsedHeaders;
-    std::string messageBody;
+    char messageBody[20] = {0};
+    int messageBodyLength = 0;
     std::stringstream ss;
     while (1) {
       memset(buf, '\0', sizeof(buf));
+      memset(messageBody, '\0', sizeof(messageBody));
 
       ssize_t x;
       if ((x = recv(sockfd, buf, 20, 0)) == -1) {
@@ -211,7 +213,8 @@ int main(int argc, char* argv[])
       i++;
       for(; i < x; i++)
       {
-        messageBody += buf[i];
+        messageBody[messageBodyLength] = buf[i];
+        messageBodyLength++;
       }
       if(rn_found >= 2)
         break;
@@ -285,7 +288,7 @@ int main(int argc, char* argv[])
     }
 
     std::ofstream of(parsedfileName);
-      of << messageBody;  
+      of.write(messageBody, messageBodyLength);  
 
 
     ss.str("");
