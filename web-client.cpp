@@ -33,287 +33,280 @@ int main(int argc, char* argv[])
   std::string protocol, domain, port, path, query, fragment, requestString, fileName;
 
   //==================READ ARGUMENTS================
-  if(argc != 2)
+  if(argc < 2)
   {
     std::cout << "Usage: " << argv[0] << " <URL> [url] [url] ... " << std::endl;
     exit(1);
   }
-  
-  std::string url = std::string(argv[1]);
-  // Regex from http://stackoverflow.com/a/27372789 and http://tools.ietf.org/html/rfc3986#appendix-B
-  boost::regex ex("([^:/?#]+)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
-  boost::cmatch url_matches;
 
-  if(regex_match(url.c_str(), url_matches, ex)) 
+  for(int z = 1; z < argc; z++)
   {
-      protocol = std::string(url_matches[1].first, url_matches[1].second);
-      domain = std::string(url_matches[2].first, url_matches[2].second);
-      port = std::string(url_matches[3].first, url_matches[3].second);
-      path = std::string(url_matches[4].first, url_matches[4].second);
-      fileName = path.substr(path.find_last_of("/")+1);
-      if(fileName == "")
-      {
-        fileName = path.substr(path.substr(0, path.find_last_of("/")).find_last_of("/")+1);
-        fileName = fileName.substr(0, fileName.size()-1);
-      }
-      if(fileName == "")
-      {
-        fileName = "index.html";
-      }
-      query = std::string(url_matches[5].first, url_matches[5].second);
-      fragment = std::string(url_matches[6].first, url_matches[6].second);
-  }
-  else
-  {
-    std::cout << "Invalid URL! Please carefully check your spelling. Note that a schema must be provided." << std::endl;
-    exit(1);
-  }
+    
+    std::string url = std::string(argv[z]);
+    // Regex from http://stackoverflow.com/a/27372789 and http://tools.ietf.org/html/rfc3986#appendix-B
+    boost::regex ex("([^:/?#]+)://([^/ :]+):?([^/ ]*)(/?[^ #?]*)\\x3f?([^ #]*)#?([^ ]*)");
+    boost::cmatch url_matches;
 
-
-  if(protocol.compare("http"))
-  {
-    std::cout << "Sorry, non-http isn't currently supported. You specified: " << protocol << std::endl;
-    exit(1);
-  }
-
-  if(port.length() != 0) //port specified
-  {
-    std::stringstream convert(port);
-    if(!(convert >> portnum))
+    if(regex_match(url.c_str(), url_matches, ex)) 
     {
-      std::cout << "<port> must be a integer!" << std::endl;
+        protocol = std::string(url_matches[1].first, url_matches[1].second);
+        domain = std::string(url_matches[2].first, url_matches[2].second);
+        port = std::string(url_matches[3].first, url_matches[3].second);
+        path = std::string(url_matches[4].first, url_matches[4].second);
+        fileName = path.substr(path.find_last_of("/")+1);
+        if(fileName == "")
+        {
+          fileName = path.substr(path.substr(0, path.find_last_of("/")).find_last_of("/")+1);
+          fileName = fileName.substr(0, fileName.size()-1);
+        }
+        if(fileName == "")
+        {
+          fileName = "index.html";
+        }
+        query = std::string(url_matches[5].first, url_matches[5].second);
+        fragment = std::string(url_matches[6].first, url_matches[6].second);
+    }
+    else
+    {
+      std::cout << "Invalid URL! Please carefully check your spelling. Note that a schema must be provided." << std::endl;
       exit(1);
     }
-  }
-
-  resolveIP(domain);
-  char* domain_cstr = stringToCString(domain);
-
-  //----------FORMAT REQUEST STRING ------------------//
-  requestString = std::string("GET ");
-  if(path.length() != 0)
-    requestString.append(path);
-  else
-    requestString.append("/");
-
-  if(query.length() != 0)
-  {
-    requestString.append("?q=");
-    requestString.append(query);
-  }
-  if(fragment.length() != 0)
-  {
-    requestString.append("#");
-    requestString.append(fragment);
-  }
-  requestString.append(" HTTP/1.0\r\n\r\n");  
-  // std::cout << requestString << std::endl;
-  // exit(5);
-  //------CONNECT TO THE SERVER --------------//
-  // create a socket using TCP IP
-  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-  struct sockaddr_in serverAddr;
-  serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(portnum);     // short, network byte order
-  serverAddr.sin_addr.s_addr = inet_addr(domain_cstr);
-  memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero));
-  // std::cout << "domain: " << domain_cstr << ":" << portnum << std::endl;
-  free(domain_cstr);
 
 
-  // connect to the server
-  if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
-    perror("connect");
-    return 2;
-  }
-
-  //get client info; mostly just need the port number that was assigned by kernel
-  struct sockaddr_in clientAddr;
-  socklen_t clientAddrLen = sizeof(clientAddr);
-  if (getsockname(sockfd, (struct sockaddr *)&clientAddr, &clientAddrLen) == -1) {
-    perror("getsockname");
-    return 3;
-  }
-
-  char ipstr[INET_ADDRSTRLEN] = {'\0'};
-  inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
-  // std::cout << "Set up a connection from: " << ipstr << ":" <<
-    // ntohs(clientAddr.sin_port) << std::endl;
-
-
-
-
-
-
-  // ---------- SEND DATA TO THE SERVER --------- //
-  // send/receive data to/from connection
-
-    // std::cout << requestString << std::endl;
-    if (send(sockfd, requestString.c_str(), requestString.size(), 0) == -1) {
-    perror("send");
-    return 4;
-  }
-
-
-  //------------- RECEIVE SERVER RESPONSE ------------- //
-
-  int rn_found = 0;
-  bool r_found = false;
-  char buf[20] = {0};
-  std::string unparsedHeaders;
-  std::string messageBody;
-  std::stringstream ss;
-  while (1) {
-    memset(buf, '\0', sizeof(buf));
-
-    if (recv(sockfd, buf, 20, 0) == -1) {
-      perror("recv");
-      return 5;
-    }
-    ss << buf;
-
-    uint i;
-    for(i = 0; i < strlen(buf); i++)
+    if(protocol.compare("http"))
     {
-      if(buf[i] == '\r')
-      {
-        if(r_found)
-          rn_found = 0;
-        
-        r_found = true;
+      std::cout << "Sorry, non-http isn't currently supported. You specified: " << protocol << std::endl;
+      exit(1);
+    }
 
+    if(port.length() != 0) //port specified
+    {
+      std::stringstream convert(port);
+      if(!(convert >> portnum))
+      {
+        std::cout << "<port> must be a integer!" << std::endl;
+        exit(1);
       }
-      else if(buf[i] == '\n')
-      {
+    }
 
-        if(r_found)
-          rn_found++;
+    resolveIP(domain);
+    char* domain_cstr = stringToCString(domain);
+
+    //----------FORMAT REQUEST STRING ------------------//
+    requestString = std::string("GET ");
+    if(path.length() != 0)
+      requestString.append(path);
+    else
+      requestString.append("/");
+
+    if(query.length() != 0)
+    {
+      requestString.append("?q=");
+      requestString.append(query);
+    }
+    if(fragment.length() != 0)
+    {
+      requestString.append("#");
+      requestString.append(fragment);
+    }
+    requestString.append(" HTTP/1.0\r\n\r\n");  
+    // std::cout << requestString << std::endl;
+    // exit(5);
+    //------CONNECT TO THE SERVER --------------//
+    // create a socket using TCP IP
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    struct sockaddr_in serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(portnum);     // short, network byte order
+    serverAddr.sin_addr.s_addr = inet_addr(domain_cstr);
+    memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero));
+    // std::cout << "domain: " << domain_cstr << ":" << portnum << std::endl;
+    free(domain_cstr);
+
+
+    // connect to the server
+    if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
+      perror("connect");
+      return 2;
+    }
+
+    //get client info; mostly just need the port number that was assigned by kernel
+    struct sockaddr_in clientAddr;
+    socklen_t clientAddrLen = sizeof(clientAddr);
+    if (getsockname(sockfd, (struct sockaddr *)&clientAddr, &clientAddrLen) == -1) {
+      perror("getsockname");
+      return 3;
+    }
+
+    char ipstr[INET_ADDRSTRLEN] = {'\0'};
+    inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
+    // std::cout << "Set up a connection from: " << ipstr << ":" <<
+      // ntohs(clientAddr.sin_port) << std::endl;
+
+
+
+
+
+
+    // ---------- SEND DATA TO THE SERVER --------- //
+    // send/receive data to/from connection
+
+      // std::cout << requestString << std::endl;
+      if (send(sockfd, requestString.c_str(), requestString.size(), 0) == -1) {
+      perror("send");
+      return 4;
+    }
+
+
+    //------------- RECEIVE SERVER RESPONSE ------------- //
+
+    int rn_found = 0;
+    bool r_found = false;
+    char buf[20] = {0};
+    std::string unparsedHeaders;
+    std::string messageBody;
+    std::stringstream ss;
+    while (1) {
+      memset(buf, '\0', sizeof(buf));
+
+      ssize_t x;
+      if ((x = recv(sockfd, buf, 20, 0)) == -1) {
+        perror("recv");
+        return 5;
+      }
+      ss << buf;
+
+      uint i;
+      for(i = 0; i < x; i++)
+      {
+        if(buf[i] == '\r')
+        {
+          if(r_found)
+            rn_found = 0;
+          
+          r_found = true;
+
+        }
+        else if(buf[i] == '\n')
+        {
+
+          if(r_found)
+            rn_found++;
+          else
+            rn_found = 0;
+
+          r_found = false;
+        }
         else
+        {
+          r_found = false;
           rn_found = 0;
+        }
 
-        r_found = false;
+        if(rn_found >= 2)
+          break;
+        unparsedHeaders += buf[i];
       }
-      else
+      i++;
+      for(; i < x; i++)
       {
-        r_found = false;
-        rn_found = 0;
+        messageBody += buf[i];
       }
-
       if(rn_found >= 2)
         break;
-      unparsedHeaders += buf[i];
-    }
-    i++;
-    for(; i < strlen(buf); i++)
-    {
-      messageBody += buf[i];
-    }
-    if(rn_found >= 2)
-      break;
-    ss.str("");
-  }
-
-  std::cerr << unparsedHeaders << std::endl;
-
-
-  //Trying to do some parsing.. :/
-  // std::cout << RequestString << std::endl;
-  std::vector<std::string> RequestVector = split_by_carriage_return(unparsedHeaders);
-  boost::char_separator<char> sep(" ");
-
-  {// lazy solution to make the variables non permanent
-    std::string headerLine = RequestVector[0];
-    
-    boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
-    boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
-    if (it == tokens.end() || (*it != "HTTP/1.0" && *it != "HTTP/1.1")) {
-      std::cerr << "Server responded unexpectedly! (Not a HTTP 1.1 or 1.0 response)" << std::endl;
-      exit(1);
-    }
-    ++it;
-
-    if (it == tokens.end() || *it != "200") {
-      std::cerr << "Server error code: " << *it << std::endl;
-      exit(1);
+      ss.str("");
     }
 
-    ++it;
-
-    if (it == tokens.end() || *it != "OK") {
-      std::cerr << "Status not OK!" << std::endl;
-      exit(1);
-    }
-  }
+    std::cerr << unparsedHeaders << std::endl;
 
 
-  int content_length = -1;
-  for(uint i = 1; i < RequestVector.size(); i++)
-  {
-    std::string headerLine = RequestVector[i];
-    boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
-    boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+    //Trying to do some parsing.. :/
+    // std::cout << RequestString << std::endl;
+    std::vector<std::string> RequestVector = split_by_carriage_return(unparsedHeaders);
+    boost::char_separator<char> sep(" ");
 
-    if(it != tokens.end() && boost::iequals(*it, "content-length:"))
-    {
+    {// lazy solution to make the variables non permanent
+      std::string headerLine = RequestVector[0];
+      
+      boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
+      boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+      if (it == tokens.end() || (*it != "HTTP/1.0" && *it != "HTTP/1.1")) {
+        std::cerr << "Server responded unexpectedly! (Not a HTTP 1.1 or 1.0 response)" << std::endl;
+        exit(1);
+      }
       ++it;
-      if(it != tokens.end())
-      {
-        content_length = std::stoi(*it);
+
+      if (it == tokens.end() || *it != "200") {
+        std::cerr << "Server error code: " << *it << std::endl;
+        exit(1);
+      }
+
+      ++it;
+
+      if (it == tokens.end() || *it != "OK") {
+        std::cerr << "Status not OK!" << std::endl;
+        exit(1);
       }
     }
-  }
-
-  // -------- PREPARE THE FILE STREAM TO OUTPUT TO ------------ //
-  std::string parsedfileName = fileName;
-
-  struct stat st;
-  int st_result;
-
-  int j = 1;
-  while((st_result = stat(parsedfileName.c_str(), &st)) == 0)
-  {
-    parsedfileName = fileName;
-    parsedfileName += " (";
-    parsedfileName += std::to_string(j);
-    parsedfileName += ")";
-    j++;
-  }
-
-  std::ofstream of(parsedfileName);
-    of << messageBody;  
 
 
-  ss.str("");
-  
-  for(int i = 0; i != content_length; i++) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
-  {
-    memset(buf, '\0', sizeof(buf));
-    ssize_t x;
-    if ((x = recv(sockfd, buf, 20, 0)) == -1) {
-      perror("recv");
-      return 5;
+    int content_length = -1;
+    for(uint i = 1; i < RequestVector.size(); i++)
+    {
+      std::string headerLine = RequestVector[i];
+      boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
+      boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+
+      if(it != tokens.end() && boost::iequals(*it, "content-length:"))
+      {
+        ++it;
+        if(it != tokens.end())
+        {
+          content_length = std::stoi(*it);
+        }
+      }
     }
-    if(x == 0) //no more bytes to read. Persistent connections are NOT supported.
-      break;
 
-    of.write(buf, x);
+    // -------- PREPARE THE FILE STREAM TO OUTPUT TO ------------ //
+    std::string parsedfileName = fileName;
 
-    messageBody.append(buf);
+    struct stat st;
+    int st_result;
+
+    int j = 1;
+    while((st_result = stat(parsedfileName.c_str(), &st)) == 0)
+    {
+      parsedfileName = fileName;
+      parsedfileName += " (";
+      parsedfileName += std::to_string(j);
+      parsedfileName += ")";
+      j++;
+    }
+
+    std::ofstream of(parsedfileName);
+      of << messageBody;  
+
+
+    ss.str("");
+    
+    for(int i = 0; i != content_length; i++) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
+    {
+      memset(buf, '\0', sizeof(buf));
+      ssize_t x;
+      if ((x = recv(sockfd, buf, 20, 0)) == -1) {
+        perror("recv");
+        return 5;
+      }
+      if(x == 0) //no more bytes to read. Persistent connections are NOT supported.
+        break;
+
+      of.write(buf, x);
+    }
+
+    close(sockfd);
+    of.close();
   }
-  // struct stat st;
-  // std::cout << messageBody;
-
-
-  close(sockfd);
-  of.close();
-
-  // while ()
-    // messageBody;
-  // char buf[256];
-
-
-
 
   return 0;
 }
