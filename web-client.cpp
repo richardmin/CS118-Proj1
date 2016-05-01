@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
   //==================READ ARGUMENTS================
   if(argc < 2)
   {
-    std::cout << "Usage: " << argv[0] << " <URL> [url] [url] ... " << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <URL> [url] [url] ... " << std::endl;
     exit(1);
   }
 
@@ -68,14 +68,14 @@ int main(int argc, char* argv[])
     }
     else
     {
-      std::cout << "Invalid URL! Please carefully check your spelling. Note that a schema must be provided." << std::endl;
+      std::cerr << "Invalid URL! Please carefully check your spelling. Note that a schema must be provided." << std::endl;
       exit(1);
     }
 
 
     if(protocol.compare("http"))
     {
-      std::cout << "Sorry, non-http isn't currently supported. You specified: " << protocol << std::endl;
+      std::cerr << "Sorry, non-http isn't currently supported. You specified: " << protocol << std::endl;
       exit(1);
     }
 
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
       std::stringstream convert(port);
       if(!(convert >> portnum))
       {
-        std::cout << "<port> must be a integer!" << std::endl;
+        std::cerr << "<port> must be a integer!" << std::endl;
         exit(1);
       }
     }
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
       requestString.append(fragment);
     }
     requestString.append(" HTTP/1.0\r\n\r\n");  
-    // std::cout << requestString << std::endl;
+    // std::cerr << requestString << std::endl;
     // exit(5);
     //------CONNECT TO THE SERVER --------------//
     // create a socket using TCP IP
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     serverAddr.sin_port = htons(portnum);     // short, network byte order
     serverAddr.sin_addr.s_addr = inet_addr(domain_cstr);
     memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero));
-    // std::cout << "domain: " << domain_cstr << ":" << portnum << std::endl;
+    // std::cerr << "domain: " << domain_cstr << ":" << portnum << std::endl;
     free(domain_cstr);
 
 
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
 
     char ipstr[INET_ADDRSTRLEN] = {'\0'};
     inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
-    // std::cout << "Set up a connection from: " << ipstr << ":" <<
+    // std::cerr << "Set up a connection from: " << ipstr << ":" <<
       // ntohs(clientAddr.sin_port) << std::endl;
 
 
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     // ---------- SEND DATA TO THE SERVER --------- //
     // send/receive data to/from connection
 
-      // std::cout << requestString << std::endl;
+      // std::cerr << requestString << std::endl;
       if (send(sockfd, requestString.c_str(), requestString.size(), 0) == -1) {
       perror("send");
       return 4;
@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
 
 
     //Trying to do some parsing.. :/
-    // std::cout << RequestString << std::endl;
+    // std::cerr << RequestString << std::endl;
     std::vector<std::string> RequestVector = split_by_carriage_return(unparsedHeaders);
     boost::char_separator<char> sep(" ");
 
@@ -317,7 +317,7 @@ char* stringToCString(std::string s)
   char* s_cpy = (char *)malloc(sizeof(char) * (strlen(s_cstr)+1));
   if(s_cpy == NULL)
   {
-    std::cout << "Malloc Failed" << std::endl;
+    std::cerr << "Malloc Failed" << std::endl;
     exit(1);
   }
 

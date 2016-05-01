@@ -4,7 +4,7 @@ BOOST=-lboost_regex
 CXXFLAGS= -g $(CXXOPTIMIZE) -pthread -Wall -std=c++11 
 LIBRARIES=$(BOOST)
 USERID=EDIT_MAKE_FILE
-CLASSES=HttpRequest.o HttpResponse.o
+CLASSES=
 
 .PHONY: all
 all: web-server web-client

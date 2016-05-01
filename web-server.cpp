@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 	//wrong number of arguments input
 	if(argc > 4)
 	{
-		std::cout << "Usage: " << argv[0] << " [hostname] [port] [file-dir]" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " [hostname] [port] [file-dir]" << std::endl;
 		exit(1);
 	}
   if(argc > 3) //all optional arguments present
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     std::stringstream convert(argv[2]);
     if(!(convert >> portnum)) //note that we don't check for overflow
     {
-      std::cout << "<port> must be a integer!" << std::endl;
+      std::cerr << "<port> must be a integer!" << std::endl;
       exit(1);
     }
   }
@@ -252,7 +252,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	//Get the file requested by the request path
 	FILE *fp;
 	std::string myfile;
-	std::string relative_path = "." + path;
+	std::string relative_path = file_dir + path;
 	int contentLength = 0;
 	const char* file_path_cstr = relative_path.data();
 	fp = fopen(file_path_cstr, "r");
