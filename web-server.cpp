@@ -94,9 +94,6 @@ int main(int argc, char* argv[])
     return 2;
   }
 
-	  struct timeval timeout;      
-		timeout.tv_sec = 10;
-		timeout.tv_usec = 0;	
 
   //Start and continue accepting connections
   std::vector<std::thread> thread_vec;
