@@ -78,6 +78,8 @@ int main(int argc, char* argv[])
     return 1;
   }
 
+  //set timeout
+  
   // bind address to socket
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
@@ -91,6 +93,10 @@ int main(int argc, char* argv[])
     perror("bind");
     return 2;
   }
+
+	  struct timeval timeout;      
+		timeout.tv_sec = 10;
+		timeout.tv_usec = 0;	
 
   //Start and continue accepting connections
   std::vector<std::thread> thread_vec;
@@ -110,6 +116,18 @@ int main(int argc, char* argv[])
 		  perror("accept");
 		  return 4;
 	  }
+
+	  // std::cout << " UHHHHH" << std::endl;
+
+	  if (setsockopt(clientSockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)) < 0) {
+	    perror("setsockopt");
+	    return 1;
+	  }
+
+	  if (setsockopt(clientSockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(timeout)) < 0) {
+	    perror("setsockopt");
+	    return 1;
+	    }
 
 	  //Have each new connection get its own thread to resolve request
 	  std::thread t(handle_one_connection, clientAddr, clientSockfd);
@@ -146,6 +164,8 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 		memset(buf, '\0', sizeof(buf));
 		if (recv(clientSockfd, buf, 256, 0) == -1) {
 			perror("recv");
+			close(clientSockfd);
+			return;
 			//			return 5;
 		}
 		ss << buf;
