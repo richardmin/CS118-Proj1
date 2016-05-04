@@ -143,22 +143,6 @@ int main(int argc, char* argv[])
 
 
 
-    struct timeval timeout;      
-    timeout.tv_sec = 10;
-    timeout.tv_usec = 0;  
-
-
-
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)) < 0) {
-      perror("setsockopt");
-      return 1;
-    }
-
-    if (setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(timeout)) < 0) {
-      perror("setsockopt");
-      return 1;
-      }
-
 
 
 
@@ -306,7 +290,7 @@ int main(int argc, char* argv[])
 
     ss.str("");
     
-    for(int i = 0; i != content_length; i++) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
+    for(int i = 0; i < content_length; i++) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
     {
       memset(buf, '\0', sizeof(buf));
       ssize_t x;

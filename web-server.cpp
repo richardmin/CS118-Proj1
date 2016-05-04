@@ -94,9 +94,6 @@ int main(int argc, char* argv[])
     return 2;
   }
 
-	  struct timeval timeout;      
-		timeout.tv_sec = 10;
-		timeout.tv_usec = 0;	
 
   //Start and continue accepting connections
   std::vector<std::thread> thread_vec;
@@ -302,18 +299,21 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 	std::string contentLength_str = std::to_string(contentLength);
 	ReplyString.append(contentLength_str);
 	ReplyString.append("\r\n\r\n");
+	
+	if (send(clientSockfd, ReplyString.c_str(), ReplyString.size(), 0) == -1) {
+			perror("send");
+			exit(-1);
+		}
+
 	if (fp != NULL) {
 		int ch;
 		while ((ch = fgetc(fp)) != EOF) {
-			ReplyString += (char)ch;
+			// std::cout << "why hello there" << std::endl;
+			if (send(clientSockfd, &ch, 1, 0) == -1) {
+				perror("send");
+				exit(-1);
+			}
 		}
-	}
-
-
-	// std::cerr << ReplyString << std::endl;
-	if (send(clientSockfd, ReplyString.c_str(), ReplyString.size(), 0) == -1) {
-		perror("send");
-		exit(-1);
 	}
 
 	if (fp != NULL)
