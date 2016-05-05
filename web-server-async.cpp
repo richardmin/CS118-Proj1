@@ -25,7 +25,7 @@ std::string file_dir = ".";
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 std::vector<std::string> split_by_carriage_return(std::string input, std::string& statusCode);
-void handle(int clientSockfd);
+void handle(int clientSockfd,  fd_set watchFds);
 
 
 int main(int argc, char* argv[])
@@ -116,14 +116,14 @@ int main(int argc, char* argv[])
 
 
     while (1) {
-        unsigned int s;
+        int s;
         readFds = watchFds;
         errFds = watchFds;
         int numReady = 0;
 
-        if ((numReady = select(maxSockfd + 1, &readsocks, NULL, &errFds, &tv)) == -1) {
+        if ((numReady = select(maxSockfd + 1, &readFds, NULL, &errFds, NULL)) == -1) {
             perror("select");
-            return 1;
+            // return 1;
         }
 
         if(numReady == 0)
@@ -140,8 +140,8 @@ int main(int argc, char* argv[])
 	                    /* New connection */
 	                    int newsock;
 	                    struct sockaddr_in clientAddr;
-	                    size_t size = sizeof(struct sockaddr_in);
-	                    newsock = accept(s, (struct sockaddr*)&clientAddr, &size);
+	                    socklen_t size = sizeof(struct sockaddr_in);
+	                    newsock = accept(sockfd, (struct sockaddr*)&clientAddr, &size);
 	                    if (newsock == -1) {
 	                        perror("accept");
 	                    }
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 	                else { //normal socket
 
 	                	//normal handling of connection
-	                	handle(s);
+	                	handle(s, watchFds);
 
 	                }
 	            }
@@ -171,12 +171,13 @@ int main(int argc, char* argv[])
         }
 
     }
+}
 
 
 
 ////------------------------------ HANDLING CONNECTION STUFF ----------------------------////
 
-void handle(int clientSockfd)
+void handle(int clientSockfd, fd_set watchFds)
 {
   std::string statusCode = "200";	//Default success status code
 
@@ -195,6 +196,7 @@ void handle(int clientSockfd)
 		memset(buf, '\0', sizeof(buf));
 		if (recv(clientSockfd, buf, 256, 0) == -1) {
 			perror("recv");
+			FD_CLR(clientSockfd, &watchFds);
 			close(clientSockfd);
 			return;
 			//			return 5;
@@ -245,6 +247,7 @@ void handle(int clientSockfd)
 	{
 		if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1) 
 			perror("send");
+		FD_CLR(clientSockfd, &watchFds);
 		close(clientSockfd);
 		return;
 	}
@@ -252,6 +255,7 @@ void handle(int clientSockfd)
 	if (headerLine == "") {
 		if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1) 
 			perror("send");
+		FD_CLR(clientSockfd, &watchFds);
 		close(clientSockfd);
 		return;
 		
@@ -265,6 +269,7 @@ void handle(int clientSockfd)
 		if (std::distance(tokens.begin(), tokens.end()) == 0) {	//The tokenized headerLine MUST have a length (ie. " " headerline invalid)
 			if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1)
 				perror("send");
+			FD_CLR(clientSockfd, &watchFds);
 			close(clientSockfd);
 			return;
 		}
@@ -274,6 +279,7 @@ void handle(int clientSockfd)
 			std::cerr << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
 			if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1)
 				perror("send");
+			FD_CLR(clientSockfd, &watchFds);
 			close(clientSockfd);
 			return;
 		}
@@ -283,6 +289,7 @@ void handle(int clientSockfd)
 			std::cerr << "Invalid path name given: " << *it << std::endl;
 			if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1)
 				perror("send");
+			FD_CLR(clientSockfd, &watchFds);
 			close(clientSockfd);
 			return;
 		}
@@ -293,6 +300,7 @@ void handle(int clientSockfd)
 			std::cerr << "Sorry, non-HTTP/1.0 isn't currently supported. You specified: " << *it << std::endl;
 			if (send(clientSockfd, "HTTP/1.0 400 Bad Request\r\n\r\n", strlen("HTTP/1.0 400 Bad Request\r\n\r\n"), 0) == -1)
 				perror("send");
+			FD_CLR(clientSockfd, &watchFds);
 			close(clientSockfd);
 			return;
 		}
@@ -321,6 +329,7 @@ void handle(int clientSockfd)
 		else {
 			if (statusCode == "200")
 				statusCode = "404";
+			FD_CLR(clientSockfd, &watchFds);
 			fclose(fp);
 			fp = NULL;
 		}
@@ -363,10 +372,13 @@ void handle(int clientSockfd)
 	}
 
 	if (fp != NULL)
+	{
 		fclose(fp);
+	}
+	FD_CLR(clientSockfd, &watchFds);
 	close(clientSockfd);
 }
-}
+
 
 
 char* stringToCString(std::string s)

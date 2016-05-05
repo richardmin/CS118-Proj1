@@ -7,7 +7,7 @@ USERID=604451118
 CLASSES=
 
 .PHONY: all
-all: web-server web-client web-client-timeout web-server-timeout
+all: web-server web-client web-client-timeout web-server-timeout web-server-async
 
 %.o: %.h %.c
 	$(CXX) $(CXXFLAGS) -c %.cpp 
