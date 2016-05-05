@@ -24,6 +24,10 @@ web-server-timeout: $(CLASSES)
 web-client-timeout: $(CLASSES)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
 
+web-server-async: $(CLASSES)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
+
+	
 .PHONY: clean
 clean:
 	rm -rf *.o *~ *.gch *.swp *.dSYM web-server web-client a.out web-server-timeout web-client-timeout *.tar.gz
