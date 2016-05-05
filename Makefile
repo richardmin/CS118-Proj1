@@ -30,7 +30,7 @@ web-server-async: $(CLASSES)
 	
 .PHONY: clean
 clean:
-	rm -rf *.o *~ *.gch *.swp *.dSYM web-server web-client a.out web-server-timeout web-client-timeout *.tar.gz
+	rm -rf *.o *~ *.gch *.swp *.dSYM web-server-async web-server web-client a.out web-server-timeout web-client-timeout *.tar.gz
 
 tarball: clean
 	tar -cvf $(USERID).tar.gz *.cpp *.h Makefile README.txt

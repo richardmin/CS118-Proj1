@@ -327,7 +327,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 			// std::cout << "why hello there" << std::endl;
 			if (send(clientSockfd, &ch, 1, 0) == -1) {
 				perror("send");
-				exit(-1);
+				return;
 			}
 		}
 	}
