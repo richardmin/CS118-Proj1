@@ -295,21 +295,21 @@ int main(int argc, char* argv[])
       
       int i = 0;
       ssize_t x;
-      char buf[1] = {0};
+      char buf2[1] = {0};
       for(i = 0; i < content_length; i+=x) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
       {
-        memset(buf, '\0', sizeof(buf));
+        memset(buf2, '\0', sizeof(buf2));
         
-        if ((x = recv(sockfd, buf, 1, 0)) == -1) {
+        if ((x = recv(sockfd, buf2, 1, 0)) == -1) {
           perror("recv");
           return 5;
         }
         if(x == 0) //no more bytes to read. Persistent connections are NOT supported.
           break;
 
-        of.write(buf, x);
+        of.write(buf2, x);
       }
-      
+
       of.close();
     }
   
