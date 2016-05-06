@@ -3,7 +3,7 @@ CXXOPTIMIZE= -O0
 BOOST=-lboost_regex
 CXXFLAGS= -g $(CXXOPTIMIZE) -pthread -Wall -std=c++11 
 LIBRARIES=$(BOOST)
-USERID=604451118
+USERID=lab1_joanne_richard
 CLASSES=
 
 .PHONY: all
@@ -27,10 +27,17 @@ web-client-timeout: $(CLASSES)
 web-server-async: $(CLASSES)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
 
+web-server-async: $(CLASSES)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
+
+web-client-async: $(CLASSES)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
+
+
 	
 .PHONY: clean
 clean:
-	rm -rf *.o *~ *.gch *.swp *.dSYM web-server-async web-server web-client a.out web-server-timeout web-client-timeout *.tar.gz
+	rm -rf *.o *~ *.gch *.swp *.dSYM web-server-async web-server web-client a.out web-server-timeout web-client-timeout web-server-1_1 web-client-1_1 *.tar.gz
 
 tarball: clean
 	tar -cvf $(USERID).tar.gz *.cpp *.h Makefile README.txt
