@@ -33,3 +33,4 @@ The only additional feature is our web-client and server support content-length.
 
 
 Note that web-client only supports things with content-length; it will break horribly if the header is not received (chunked data streams are not supported)
+The web-client-1_1 assumes that you are only connecting to one website (for all the parallel connections) which it accepts through the same header .

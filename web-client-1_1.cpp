@@ -28,6 +28,7 @@ int main(int argc, char* argv[])
 {
   int portnum = 80;
   std::string protocol, domain, port, path, query, fragment, requestString, fileName;
+  char* domain_cstr;
 
   //==================READ ARGUMENTS================
   if(argc < 2)
@@ -87,7 +88,7 @@ int main(int argc, char* argv[])
     }
 
     resolveIP(domain);
-    char* domain_cstr = stringToCString(domain);
+    domain_cstr = stringToCString(domain);
 
     //----------FORMAT REQUEST STRING ------------------//
     requestString = std::string("GET ");
@@ -293,10 +294,10 @@ int main(int argc, char* argv[])
 
       ss.str("");
       
-      int i = 0;
-      ssize_t x;
+      j = 0;
+      ssize_t x = 0;
       char buf2[1] = {0};
-      for(i = 0; i < content_length; i+=x) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
+      for(j = 0; j < content_length; j+=x) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
       {
         memset(buf2, '\0', sizeof(buf2));
         
