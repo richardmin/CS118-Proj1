@@ -25,7 +25,7 @@ std::string file_dir = ".";
 char* stringToCString(std::string s);
 void resolveIP(std::string& hostname); //note this only gets the first IP
 std::vector<std::string> split_by_carriage_return(std::string input, std::string& statusCode);
-void handle(int clientSockfd,  fd_set watchFds);
+void handle(int clientSockfd,  fd_set &watchFds);
 
 
 int main(int argc, char* argv[])
@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
 
 ////------------------------------ HANDLING CONNECTION STUFF ----------------------------////
 
-void handle(int clientSockfd, fd_set watchFds)
+void handle(int clientSockfd, fd_set& watchFds)
 {
   std::string statusCode = "200";	//Default success status code
 
