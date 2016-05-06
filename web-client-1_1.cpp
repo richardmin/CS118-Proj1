@@ -158,155 +158,160 @@ int main(int argc, char* argv[])
 
 
     //------------- RECEIVE SERVER RESPONSE ------------- //
+    std::string persistentData;
+    for(int i = 1; i < argc; i++)
+    {
+      int rn_found = 0;
+      bool r_found = false;
+      char buf[20] = {0};
+      std::string unparsedHeaders;
+      char messageBody[20] = {0};
+      int messageBodyLength = 0;
+      std::stringstream ss;
+      while (1) {
+        memset(buf, '\0', sizeof(buf));
+        memset(messageBody, '\0', sizeof(messageBody));
 
-    int rn_found = 0;
-    bool r_found = false;
-    char buf[20] = {0};
-    std::string unparsedHeaders;
-    char messageBody[20] = {0};
-    int messageBodyLength = 0;
-    std::stringstream ss;
-    while (1) {
-      memset(buf, '\0', sizeof(buf));
-      memset(messageBody, '\0', sizeof(messageBody));
-
-      ssize_t x;
-      if ((x = recv(sockfd, buf, 20, 0)) == -1) {
-        perror("recv");
-        return 5;
-      }
-      ss << buf;
-
-      uint i;
-      for(i = 0; i < x; i++)
-      {
-        if(buf[i] == '\r')
-        {
-          if(r_found)
-            rn_found = 0;
-          
-          r_found = true;
-
+        ssize_t x;
+        if ((x = recv(sockfd, buf, 20, 0)) == -1) {
+          perror("recv");
+          return 5;
         }
-        else if(buf[i] == '\n')
-        {
+        ss << buf;
 
-          if(r_found)
-            rn_found++;
+        uint i;
+        for(i = 0; i < x; i++)
+        {
+          if(buf[i] == '\r')
+          {
+            if(r_found)
+              rn_found = 0;
+            
+            r_found = true;
+
+          }
+          else if(buf[i] == '\n')
+          {
+
+            if(r_found)
+              rn_found++;
+            else
+              rn_found = 0;
+
+            r_found = false;
+          }
           else
+          {
+            r_found = false;
             rn_found = 0;
+          }
 
-          r_found = false;
+          if(rn_found >= 2)
+            break;
+          unparsedHeaders += buf[i];
         }
-        else
+        i++;
+        for(; i < x; i++)
         {
-          r_found = false;
-          rn_found = 0;
+          messageBody[messageBodyLength] = buf[i];
+          messageBodyLength++;
         }
-
         if(rn_found >= 2)
           break;
-        unparsedHeaders += buf[i];
-      }
-      i++;
-      for(; i < x; i++)
-      {
-        messageBody[messageBodyLength] = buf[i];
-        messageBodyLength++;
-      }
-      if(rn_found >= 2)
-        break;
-      ss.str("");
-    }
-
-    std::cerr << unparsedHeaders << std::endl;
-
-
-    //Trying to do some parsing.. :/
-    // std::cerr << RequestString << std::endl;
-    std::vector<std::string> RequestVector = split_by_carriage_return(unparsedHeaders);
-    boost::char_separator<char> sep(" ");
-
-    {// lazy solution to make the variables non permanent
-      std::string headerLine = RequestVector[0];
-      
-      boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
-      boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
-      if (it == tokens.end() || (*it != "HTTP/1.0" && *it != "HTTP/1.1")) {
-        std::cerr << "Server responded unexpectedly! (Not a HTTP 1.1 or 1.0 response)" << std::endl;
-        exit(1);
-      }
-      ++it;
-
-      if (it == tokens.end() || *it != "200") {
-        std::cerr << "Server error code: " << *it << std::endl;
-        exit(1);
+        ss.str("");
       }
 
-      ++it;
-
-      if (it == tokens.end() || *it != "OK") {
-        std::cerr << "Status not OK!" << std::endl;
-        exit(1);
-      }
-    }
+      std::cerr << unparsedHeaders << std::endl;
 
 
-    int content_length = -1;
-    for(uint i = 1; i < RequestVector.size(); i++)
-    {
-      std::string headerLine = RequestVector[i];
-      boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
-      boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+      //Trying to do some parsing.. :/
+      // std::cerr << RequestString << std::endl;
+      std::vector<std::string> RequestVector = split_by_carriage_return(unparsedHeaders);
+      boost::char_separator<char> sep(" ");
 
-      if(it != tokens.end() && boost::iequals(*it, "content-length:"))
-      {
+      {// lazy solution to make the variables non permanent
+        std::string headerLine = RequestVector[0];
+        
+        boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
+        boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+        if (it == tokens.end() || (*it != "HTTP/1.0" && *it != "HTTP/1.1")) {
+          std::cerr << "Server responded unexpectedly! (Not a HTTP 1.1 or 1.0 response)" << std::endl;
+          exit(1);
+        }
         ++it;
-        if(it != tokens.end())
-        {
-          content_length = std::stoi(*it);
+
+        if (it == tokens.end() || *it != "200") {
+          std::cerr << "Server error code: " << *it << std::endl;
+          exit(1);
+        }
+
+        ++it;
+
+        if (it == tokens.end() || *it != "OK") {
+          std::cerr << "Status not OK!" << std::endl;
+          exit(1);
         }
       }
-    }
-
-    // -------- PREPARE THE FILE STREAM TO OUTPUT TO ------------ //
-    std::string parsedfileName = fileName;
-
-    struct stat st;
-    int st_result;
-
-    int j = 1;
-    while((st_result = stat(parsedfileName.c_str(), &st)) == 0)
-    {
-      parsedfileName = fileName;
-      parsedfileName += " (";
-      parsedfileName += std::to_string(j);
-      parsedfileName += ")";
-      j++;
-    }
-
-    std::ofstream of(parsedfileName);
-      of.write(messageBody, messageBodyLength);  
 
 
-    ss.str("");
-    
-    for(int i = 0; i < content_length; i++) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
-    {
-      memset(buf, '\0', sizeof(buf));
-      ssize_t x;
-      if ((x = recv(sockfd, buf, 20, 0)) == -1) {
-        perror("recv");
-        return 5;
+      int content_length = -1;
+      for(uint i = 1; i < RequestVector.size(); i++)
+      {
+        std::string headerLine = RequestVector[i];
+        boost::tokenizer<boost::char_separator<char>> tokens(headerLine, sep);
+        boost::tokenizer<boost::char_separator<char>>::iterator it = tokens.begin();
+
+        if(it != tokens.end() && boost::iequals(*it, "content-length:"))
+        {
+          ++it;
+          if(it != tokens.end())
+          {
+            content_length = std::stoi(*it);
+          }
+        }
       }
-      if(x == 0) //no more bytes to read. Persistent connections are NOT supported.
-        break;
 
-      of.write(buf, x);
+      // -------- PREPARE THE FILE STREAM TO OUTPUT TO ------------ //
+      std::string parsedfileName = fileName;
+
+      struct stat st;
+      int st_result;
+
+      int j = 1;
+      while((st_result = stat(parsedfileName.c_str(), &st)) == 0)
+      {
+        parsedfileName = fileName;
+        parsedfileName += " (";
+        parsedfileName += std::to_string(j);
+        parsedfileName += ")";
+        j++;
+      }
+
+      std::ofstream of(parsedfileName);
+        of.write(messageBody, messageBodyLength);  
+
+
+      ss.str("");
+      
+      int i = 0;
+      ssize_t x;
+      char buf[1] = {0};
+      for(i = 0; i < content_length; i+=x) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
+      {
+        memset(buf, '\0', sizeof(buf));
+        
+        if ((x = recv(sockfd, buf, 1, 0)) == -1) {
+          perror("recv");
+          return 5;
+        }
+        if(x == 0) //no more bytes to read. Persistent connections are NOT supported.
+          break;
+
+        of.write(buf, x);
+      }
+      
+      of.close();
     }
-
-    close(sockfd);
-    of.close();
   
   close(sockfd);
   return 0;

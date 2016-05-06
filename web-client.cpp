@@ -289,11 +289,10 @@ int main(int argc, char* argv[])
 
 
     ss.str("");
-    
-    for(int i = 0; i < content_length; i++) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
+    ssize_t x;
+    for(int i = 0; i < content_length; i+=x) //if content-length is defined, this will only get characters to the content-length. Otherwise, it functions as a while loop until no more bytes can be read.
     {
       memset(buf, '\0', sizeof(buf));
-      ssize_t x;
       if ((x = recv(sockfd, buf, 20, 0)) == -1) {
         perror("recv");
         return 5;
