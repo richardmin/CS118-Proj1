@@ -155,16 +155,19 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
     ntohs(clientAddr.sin_port) << std::endl;
 
     // read/write data from/into the connection
-    std::string RequestString;
-    std::string ReplyString;
-    char buf[256] = { 0 };
-    std::stringstream ss;
-    std::string receivedData;
-    std::string messageBody;
     
+    char buf[1] = { 0 };
+    std::stringstream ss;
+
     while(1)
     {
     //Keep collecting data until we reach \r\n\r\n
+      std::string RequestString;
+      std::string ReplyString;
+      std::string receivedData;
+      std::string messageBody;
+    
+      
       int rn_found = 0;
       bool r_found = false;
       ss << messageBody;
@@ -176,7 +179,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
 
         ssize_t x;
-        if ((x = recv(clientSockfd, buf, 20, 0)) == -1) {
+        if ((x = recv(clientSockfd, buf, 1, 0)) == -1) {
           perror("recv");
           return;
         }
@@ -229,7 +232,6 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
     //Parse the first line of the HTTP Request Message
     //Should be of format GET /path HTTP/1.1
-    // std::cerr << RequestString << std::endl;
       std::vector<std::string> RequestVector = split_by_carriage_return(RequestString, statusCode);
       if (RequestVector.size() == 0)
       {
@@ -295,9 +297,9 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
       if(it != tokens.end() && boost::iequals(*it, "Host:"))
       {
         ++it;
+        HOST_FOUND = true;
         if(it != tokens.end())
         {
-          HOST_FOUND = true;
           host = *it;
         }
       }
@@ -364,6 +366,10 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
     if (send(clientSockfd, ReplyString.c_str(), ReplyString.size(), 0) == -1) {
       perror("send");
       exit(-1);
+    }
+    else
+    {
+      std::cout << ReplyString << std::endl;
     }
 
     if (fp != NULL) {
