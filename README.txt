@@ -26,3 +26,10 @@ We detect the connection is closed if the file handle is stale (the correct appr
 The client makes the requests by queueing up all the send commands together and all the receive commands together.
 
 Server timeout is supported
+
+
+The only additional feature is our web-client and server support content-length.
+
+
+
+Note that web-client only supports things with content-length; it will break horribly if the header is not received (chunked data streams are not supported)

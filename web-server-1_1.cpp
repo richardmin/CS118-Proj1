@@ -18,7 +18,7 @@
 #include <vector>
 
 #include <boost/tokenizer.hpp>
-
+#include <boost/algorithm/string.hpp>
 std::string file_dir = ".";
 
 char* stringToCString(std::string s);
@@ -168,15 +168,17 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
       int rn_found = 0;
       bool r_found = false;
       ss << messageBody;
-      
+      messageBody = "";      
+      int messageBodyLength = 0;
+
       while (1) {
         memset(buf, '\0', sizeof(buf));
-        memset(messageBody, '\0', sizeof(messageBody));
+
 
         ssize_t x;
-        if ((x = recv(sockfd, buf, 20, 0)) == -1) {
+        if ((x = recv(clientSockfd, buf, 20, 0)) == -1) {
           perror("recv");
-          return 5;
+          return;
         }
         ss << buf;
 
@@ -209,7 +211,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
           if(rn_found >= 2)
             break;
-          unparsedHeaders += buf[i];
+          receivedData += buf[i];
         }
         i++;
         for(; i < x; i++)
@@ -233,14 +235,12 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
       {
         if (send(clientSockfd, "HTTP/1.1 400 Bad Request\r\n\r\n", strlen("HTTP/1.1 400 Bad Request\r\n\r\n"), 0) == -1) 
           perror("send");
-        close(clientSockfd);
         return;
       }
       std::string headerLine = RequestVector[0];
       if (headerLine == "") {
         if (send(clientSockfd, "HTTP/1.1 400 Bad Request\r\n\r\n", strlen("HTTP/1.1 400 Bad Request\r\n\r\n"), 0) == -1) 
           perror("send");
-        close(clientSockfd);
         return;
 
       }
@@ -253,7 +253,6 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
       if (std::distance(tokens.begin(), tokens.end()) == 0) { //The tokenized headerLine MUST have a length (ie. " " headerline invalid)
         if (send(clientSockfd, "HTTP/1.1 400 Bad Request\r\n\r\n", strlen("HTTP/1.1 400 Bad Request\r\n\r\n"), 0) == -1)
           perror("send");
-        close(clientSockfd);
         return;
       }
 
@@ -262,7 +261,6 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
         std::cerr << "Sorry, non-GET methods are not supported. You requested: " << *it << std::endl;
         if (send(clientSockfd, "HTTP/1.1 400 Bad Request\r\n\r\n", strlen("HTTP/1.1 400 Bad Request\r\n\r\n"), 0) == -1)
           perror("send");
-        close(clientSockfd);
         return;
       }
       method = *it;
@@ -271,7 +269,6 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
         std::cerr << "Invalid path name given: " << *it << std::endl;
         if (send(clientSockfd, "HTTP/1.1 400 Bad Request\r\n\r\n", strlen("HTTP/1.1 400 Bad Request\r\n\r\n"), 0) == -1)
           perror("send");
-        close(clientSockfd);
         return;
       }
       path = *it;
@@ -281,7 +278,6 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
         std::cerr << "Sorry, non-HTTP/1.1 isn't currently supported. You specified: " << *it << std::endl;
         if (send(clientSockfd, "HTTP/1.1 400 Bad Request\r\n\r\n", strlen("HTTP/1.1 400 Bad Request\r\n\r\n"), 0) == -1)
           perror("send");
-        close(clientSockfd);
         return;
       }
       protocol = *it;
@@ -289,6 +285,7 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
 
     bool HOST_FOUND = false;
     std::string host = "";
+    boost::char_separator<char> sep(" ");
     for(uint i = 1; i < RequestVector.size(); i++)
     {
       std::string headerLine = RequestVector[i];
@@ -310,8 +307,9 @@ void handle_one_connection(struct sockaddr_in clientAddr, int clientSockfd) {
     {
       std::cerr << "Sorry, HOST header is mandatory." << std::endl;
       if (send(clientSockfd, "HTTP/1.1 400 Bad Request\r\n\r\n", strlen("HTTP/1.1 400 Bad Request\r\n\r\n"), 0) == -1)
+      {
         perror("send");
-      close(clientSockfd);
+      }
       return;
     }
 

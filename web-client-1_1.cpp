@@ -107,6 +107,7 @@ int main(int argc, char* argv[])
       requestString.append(fragment);
     }
     requestString.append(" HTTP/1.1\r\n\r\n");  
+  }
     // std::cerr << requestString << std::endl;
     // exit(5);
     //------CONNECT TO THE SERVER --------------//
@@ -306,8 +307,8 @@ int main(int argc, char* argv[])
 
     close(sockfd);
     of.close();
-  }
-
+  
+  close(sockfd);
   return 0;
 }
 
