@@ -27,7 +27,8 @@ std::vector<std::string> split_by_carriage_return(std::string input);
 int main(int argc, char* argv[])
 {
   int portnum = 80;
-  std::string protocol, domain, port, path, query, fragment, requestString, fileName;
+  std::string protocol, domain, port, path, query, fragment, requestString = "";
+  std::string fileName[argc];
   char* domain_cstr;
 
   //==================READ ARGUMENTS================
@@ -51,15 +52,15 @@ int main(int argc, char* argv[])
         domain = std::string(url_matches[2].first, url_matches[2].second);
         port = std::string(url_matches[3].first, url_matches[3].second);
         path = std::string(url_matches[4].first, url_matches[4].second);
-        fileName = path.substr(path.find_last_of("/")+1);
-        if(fileName == "")
+        fileName[z] = path.substr(path.find_last_of("/")+1);
+        if(fileName[z] == "")
         {
-          fileName = path.substr(path.substr(0, path.find_last_of("/")).find_last_of("/")+1);
-          fileName = fileName.substr(0, fileName.size()-1);
+          fileName[z] = path.substr(path.substr(0, path.find_last_of("/")).find_last_of("/")+1);
+          fileName[z] = fileName[z].substr(0, fileName[z].size()-1);
         }
-        if(fileName == "")
+        if(fileName[z] == "")
         {
-          fileName = "index.html";
+          fileName[z] = "index.html";
         }
         query = std::string(url_matches[5].first, url_matches[5].second);
         fragment = std::string(url_matches[6].first, url_matches[6].second);
@@ -91,7 +92,7 @@ int main(int argc, char* argv[])
     domain_cstr = stringToCString(domain);
 
     //----------FORMAT REQUEST STRING ------------------//
-    requestString = std::string("GET ");
+    requestString.append(std::string("GET "));
     if(path.length() != 0)
       requestString.append(path);
     else
@@ -108,19 +109,22 @@ int main(int argc, char* argv[])
       requestString.append(fragment);
     }
     requestString.append(" HTTP/1.1\r\nHost:\r\n\r\n");  
+    
   }
-    // std::cerr << requestString << std::endl;
+  std::cerr << "requestString: " << requestString << " END REQUEST STRING" << std::endl;
+
+    
     // exit(5);
     //------CONNECT TO THE SERVER --------------//
     // create a socket using TCP IP
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
+    std::cerr << "domain: " << domain_cstr << " port: " << portnum << std::endl;
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(portnum);     // short, network byte order
     serverAddr.sin_addr.s_addr = inet_addr(domain_cstr);
     memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero));
-    // std::cerr << "domain: " << domain_cstr << ":" << portnum << std::endl;
     free(domain_cstr);
 
 
@@ -140,8 +144,6 @@ int main(int argc, char* argv[])
 
     char ipstr[INET_ADDRSTRLEN] = {'\0'};
     inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
-    // std::cerr << "Set up a connection from: " << ipstr << ":" <<
-      // ntohs(clientAddr.sin_port) << std::endl;
 
 
 
@@ -151,7 +153,6 @@ int main(int argc, char* argv[])
     // ---------- SEND DATA TO THE SERVER --------- //
     // send/receive data to/from connection
 
-      // std::cerr << requestString << std::endl;
       if (send(sockfd, requestString.c_str(), requestString.size(), 0) == -1) {
       perror("send");
       return 4;
@@ -222,7 +223,7 @@ int main(int argc, char* argv[])
         ss.str("");
       }
 
-      std::cerr << unparsedHeaders << std::endl;
+      std::cerr << "unparsedHeaders: " << unparsedHeaders << std::endl;
 
 
       //Trying to do some parsing.. :/
@@ -273,7 +274,7 @@ int main(int argc, char* argv[])
       }
 
       // -------- PREPARE THE FILE STREAM TO OUTPUT TO ------------ //
-      std::string parsedfileName = fileName;
+      std::string parsedfileName = fileName[i];
 
       struct stat st;
       int st_result;
@@ -281,7 +282,7 @@ int main(int argc, char* argv[])
       int j = 1;
       while((st_result = stat(parsedfileName.c_str(), &st)) == 0)
       {
-        parsedfileName = fileName;
+        parsedfileName = fileName[i];
         parsedfileName += " (";
         parsedfileName += std::to_string(j);
         parsedfileName += ")";
