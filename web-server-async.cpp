@@ -122,9 +122,7 @@ int main(int argc, char* argv[])
         int numReady = 0;
 
         if ((numReady = select(maxSockfd + 1, &readFds, NULL, &errFds, NULL)) == -1) {
-        	std::cout << "wat";
             perror("select");
-            std::cout << "wat";
             // return 1;
         }
 
