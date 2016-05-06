@@ -7,7 +7,7 @@ USERID=lab1_joanne_richard
 CLASSES=
 
 .PHONY: all
-all: web-server web-client web-client-timeout web-server-timeout web-server-async web-server-1_1
+all: web-server web-client web-client-timeout web-server-timeout web-server-async web-server-1_1 web-client-1_1
 
 %.o: %.h %.c
 	$(CXX) $(CXXFLAGS) -c %.cpp 
@@ -25,12 +25,6 @@ web-client-timeout: $(CLASSES)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
 
 web-server-async: $(CLASSES)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
-
-web-server-async: $(CLASSES)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
-
-web-client-async: $(CLASSES)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp $(LIBRARIES)
 
 web-server-1_1: $(CLASSES)
